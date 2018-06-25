@@ -1,6 +1,6 @@
 #include <stdio.h> 
-#include "MD.h"
 #include <string.h>
+#include "MD.h"
 
 unsigned char buf[] = "a string ,write %d %sto com";
 unsigned char rcvBuf[10];

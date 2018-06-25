@@ -1,45 +1,18 @@
 #ifndef __UART_H__
 #define __UART_H__
 
-#ifdef __cplusplus 
-extern "C" { 
-#endif
+#include <Windows.h>
 
-#define SPEED_230400    0
-#define SPEED_115200    1
-#define SPEED_57600     2
-#define SPEED_56000     3
-#define SPEED_38400     4
-#define SPEED_19200     5
-#define SPEED_14400     6
-#define SPEED_9600      7
-#define SPEED_4800      8
-#define SPEED_2400      9
-#define SPEED_1200      10
-#define SPEED_600       11
-#define SPEED_300       12
-#define SPEED_110       13
-
-enum
-{
-	TTYS0=0,
-	TTYS1,
-	TTYS2,
-	TTYS3,
-	TTYS4,
-	TTYS5,
-};
-
-int uart_open(int type, int rate);
-int uart_write(int type, void *pSrc, int len);
-int uart_read(int type, void *pRet, int retLen);
-int uart_read_count(int type);
-int uart_close(int type);
-void uart_empty(int type);
-void uart_set_speed(int type, int speed);
-
-#ifdef __cplusplus 
-}
-#endif
+//CBR_115200,CBR_57600,CBR_56000,CBR_38400,CBR_19200,CBR_14400,CBR_9600,CBR_4800,CBR_2400,CBR_1200,CBR_600,CBR_300,CBR_110
+HANDLE uart_open(char *CommName, int rate);
+int uart_write(HANDLE hCom, void *pSrc, int len);
+int uart_read(HANDLE hCom, void *pRet, int retLen);
+int uart_read_count(HANDLE hCom);
+int uart_close(HANDLE hCom);
+void uart_empty(HANDLE hCom);
+void uart_set_speed(HANDLE hCom, int speed);
+//int GetSerialPort(CStringArray &arrCom);
+int uart_set_param(HANDLE hCom,int dataSize,char *pStopBitStr,char *pParityStr);
+void uart_set_rts(HANDLE hCom, int isEnable);
 
 #endif
