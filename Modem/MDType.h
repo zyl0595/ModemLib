@@ -33,10 +33,17 @@ typedef enum{
     SOCK_ERROR,        /*出错*/
 }eMDSockState;
 
+/*Socket类型*/
+typedef enum{
+    SOCK_STREAM = 1,    /*TCP*/
+    SOCK_DGRAM  = 2,    /*UDP*/
+    //SOCK_RAW  = 3     /*RAW*/
+}eMDSockType;
+
 /*模块返回AT指令响应定义*/ 
 typedef struct{
-    uint8_t isPositive;           /*是否是积极响应*/
-    uint8_t buf[MD_RCV_BUF_SIZE]; /*接收回应内容缓存*/
+    uint8_t isPositive;           /*是否是积极响应，指令返回"OK"时为TRUE，返回"ERROR"或其他时为FALSE*/
+    uint8_t buf[MD_RCV_BUF_SIZE]; /*指令返回数据接收缓存*/
     uint16_t len;                 /*回应数据长度*/ 
 }sMDAtCmdRsp;
 
@@ -58,9 +65,9 @@ typedef struct{
 
 /*通过AT指令发送Tcp数据的数据结构定义*/
 typedef struct{
-    const uint8_t *pData;   /*要发送的数据*/ 
-    uint16_t len;           /*数据长度*/ 
-    const uint8_t *pIp;     /*目的Ip地址*/ 
+    const uint8_t *pData;   /*要发送的数据*/
+    uint16_t len;           /*数据长度*/
+    const uint8_t *pIp;     /*目的Ip地址*/
     uint16_t port;          /*目的端口号*/
 }sMDSockData;
 
@@ -74,9 +81,18 @@ typedef union{
     }sVal;
 }sMDIPv4Addr;
 
+/*Socket Control Block 控制块*/
 typedef struct{
-    sMDIPv4Addr localAddr;  /*建立网络连接之后获得的本机IP地址*/
-};
+    eMDSockType type;   /*Socket类型*/
+    eMDSockState state; /*Socket连接状态*/
+    sMDIPv4Addr ip;     /*对端IP地址*/
+    uint16_t    port;   /*对端端口号*/
+}sMDSocketCB;
 
+/*存储模块各类状态信息*/
+typedef struct{
+    sMDIPv4Addr localAddr;                  /*建立网络连接之后获得的本机IP地址*/
+    sMDSocketCB sockets[MD_MAX_SOCK_NUM];   /*Socket列表*/
+}sMDModemInfo;
 #endif //__MD_TYPE_H
 

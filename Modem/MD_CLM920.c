@@ -1,3 +1,16 @@
+/* 
+* 文件名称：MD_CLM920.c
+* 摘    要：
+*  
+* 作    者：
+* 创建日期：2018年6月18日 
+*
+* 修改历史
+* 修改摘要：
+* 修改作者：
+* 修改时间：
+*/
+
 #include "MDAtCmd.h"
 #include "MDAtProc.h"
 #include <string.h>
@@ -46,7 +59,7 @@ eMDErrCode CLM920_ATIPADDR_Hdl(sMDAtCmdRsp *pRsp, void *pArg)
         if(NULL != pFind){
             pFind += 9;//strlen("+IPADDR: ")
             
-            ret = MD_Str2Ip(pIp, pFind);
+            ret = MD_Str2Ip(pIp, pFind);//提取返回数据中的IP信息并存放到*pIp中
 
             if(MDE_OK == ret){
                 MD_DEBUG("Got IP addr:%d.%d.%d.%d\r\n", pIp->sVal.v4, pIp->sVal.v3, pIp->sVal.v2, pIp->sVal.v1);
@@ -79,11 +92,10 @@ eMDErrCode CLM920_Init(void)
     return MD_ATCmdTableSnd(s_CLM920InitCmdTable, TABLE_SIZE(s_CLM920InitCmdTable));
 }
 
-eMDErrCode CLM920_SokctInit(void)
+eMDErrCode CLM920_SokctInit(sMDModemInfo *pMdInfo)
 {
     sMDAtCmdRsp rsp;
     eMDErrCode ret;
-    sMDIPv4Addr ipAddr;
 
     /*触发建立Socket链接*/
     ret = MD_ATCmdSnd(s_cmdATIPNETOPEN, 10, CLM920_ATIPNETOPEN_Hdl, NULL);
@@ -95,14 +107,14 @@ eMDErrCode CLM920_SokctInit(void)
     /*检查Socket建立是否成功*/
     if(MDE_ALREADYON != ret){
 
-        ret = MD_GetURCMsg(urcIPNETOPEN, &rsp, 2);//等待URC 2秒钟
+        ret = MD_AtGetURCMsg(urcIPNETOPEN, &rsp, 1);//等待URC 1秒钟，等不到就主动查
 
         if(MDE_OK == ret){
             if(!strstr(rsp.buf, "+IPNETOPEN: 0")){
                 MD_DEBUG("IP net open failed");
                 return MDE_ERROR;
             }
-        }else{
+        }else{//没有接收到反应Socket连接状态的URC，主动进行查询
             ret = MD_ATCmdSnd("AT+IPNETOPEN?\r\n", 10, NULL, "IPNETOPEN: 1");
             if(MDE_OK != ret){
                 MD_DEBUG("IP net open failed");
@@ -112,10 +124,17 @@ eMDErrCode CLM920_SokctInit(void)
     }
 
     /*获取本地IP地址*/
-    ret = MD_ATCmdSnd(s_cmdATIPADDR, 5, CLM920_ATIPADDR_Hdl, &ipAddr);
+    ret = MD_ATCmdSnd(s_cmdATIPADDR, 5, CLM920_ATIPADDR_Hdl, &(pMdInfo->localAddr));
 
     return ret;
 }
+
+
+eMDErrCode CLM920_Connect(int s)
+{
+    
+}
+
 
 eMDErrCode CLM920_SendIpData(uint8_t fd, const sMDSockData *pData)
 {
@@ -132,6 +151,8 @@ eMDErrCode CLM920_SendIpData(uint8_t fd, const sMDSockData *pData)
     return MD_ATDataSend(cmdBuf, pData->pData, pData->len, 10);
 }
 
+
+//域名解析服务
 eMDErrCode CLM920_GetHostByName(const char *pName, sMDIPv4Addr *pAddr)
 {
     eMDErrCode ret;

@@ -2,7 +2,7 @@
 * 文件名称：MD.c
 * 摘    要：
 *  
-* 作    者：张云龙
+* 作    者：
 * 创建日期：2018年6月18日 
 *
 * 修改历史
@@ -22,21 +22,37 @@
 /*************************** 私有变量 ******************************/
 
 /*************************** 全局变量 ******************************/
-
+sMDModemInfo g_MdInfo;
 
 
 /*************************** 函数实现 ******************************/
+
+static void MD_SockCBInit(sMDSocketCB *pSock)
+{
+    if(NULL != pSock){
+        pSock->ip.val = 0; //0.0.0.0
+        pSock->port   = 0;
+        pSock->state  = SOCK_CLOSED;
+        pSock->type   = SOCK_STREAM;
+    }
+}
 
 /*
 * 识别模块类型，初始化模块连接网络 
 */ 
 int MD_Init(void)
 {
+    int i;
+
+    for(i=0;i<MD_MAX_SOCK_NUM;i++){
+        MD_SockCBInit(&g_MdInfo.sockets[i]);
+    }
+
     int ret = 0;
     if(MD_TtysOpen()){
         if(MDE_OK == CLM920_Init()){
             MD_DEBUG("CLM920 init succ!\r\n");
-            CLM920_SokctInit();
+            CLM920_SokctInit(&g_MdInfo);
             ret = 1;
         }else{
             MD_DEBUG("CLM920 init failed!\r\n");
@@ -47,6 +63,20 @@ int MD_Init(void)
     
     return ret;
 }
+
+//域名解析
+eMDErrCode MD_GetHostByName(const char *pName, sMDIPv4Addr *pAddr)
+{
+    eMDErrCode ret;
+    return MDE_OK;
+}
+
+
+eMDErrCode MD_Connect(int s)
+{
+    return MDE_OK;
+}
+
 
 
 void MD_test(void)
@@ -66,8 +96,3 @@ void MD_test(void)
     }while(MDE_OK != ret);
 }
 
-//域名解析
-eMDErrCode MD_GetHostByName(const char *pName, sMDIPv4Addr *pAddr)
-{
-
-}

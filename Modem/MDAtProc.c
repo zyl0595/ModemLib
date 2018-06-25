@@ -1,3 +1,17 @@
+/* 
+* 文件名称：MDATProc.c
+* 摘    要：提供一些通用的AT指令交互函数的实现，这些函数可以被用来向模块发送
+*           AT指令并接收模块响应数据
+*  
+* 作    者：
+* 创建日期：2018年6月18日 
+*
+* 修改历史
+* 修改摘要：
+* 修改作者：
+* 修改时间：
+*/
+
 #include <string.h>
 #include "MDConfig.h"
 #include "MDAtCmd.h"
@@ -40,8 +54,18 @@ eMDErrCode MD_ATCmdSnd(const uint8_t *pCmd, uint8_t delay, ATCmdRspHdl pRspHdl, 
     sMDAtCmdRsp rsp;
     uint16_t rcvIndex = 0;
     uint16_t rcvLen;
-    uint8_t *pFind = rsp.buf;  //指向指令接收过程中检查回应数据起始位置 
-    BOOLEAN isStrRcved = FALSE;
+    uint16_t remainedSpac;  //剩余接收缓存空间
+    uint8_t *pFind;
+    uint8_t *pCurFind = rsp.buf;
+    BOOLEAN isCompaStr;
+    BOOLEAN isStrRcved = FALSE; //是否接收到目标字符串 pArg
+
+    /*是否匹配AT命令返回字符串内容*/
+    if((NULL == pRspHdl) && (NULL != pArg)){
+        isCompaStr = TRUE;
+    }else{
+        isCompaStr = FALSE;
+    }
 
     /*发送AT命令到串口上*/
     MD_DEBUG("Snd:%s", pCmd);
@@ -53,35 +77,55 @@ eMDErrCode MD_ATCmdSnd(const uint8_t *pCmd, uint8_t delay, ATCmdRspHdl pRspHdl, 
     
     /*接收回复指令*/
     do{
-        rcvLen = MD_ReadBuf(rsp.buf+rcvIndex, sizeof(rsp.buf)-1 - rcvIndex);
+        remainedSpac = sizeof(rsp.buf)-1 - rcvIndex;//计算剩余可接收字节数
+        
+        if(remainedSpac > 0){
+            rcvLen = MD_ReadBuf(rsp.buf+rcvIndex, remainedSpac);
+        }else{
+            MD_DEBUG("AT cmd rcv buf overflow!\r\n");
+            return MDE_BUFOVFL; //接收缓存已满都未能匹配到目标字符串
+        }
+        
         if(rcvLen > 0){
             rcvIndex += rcvLen;
             rsp.buf[rcvIndex] = '\0';
 
-            /*检查是否接收到回车换行符，并且是完整响应*/
-            if(strstr(rsp.buf, "\r\n")){
+            /*逐行查找："OK"、"ERROR"、pArg*/
+            pFind = strstr(pCurFind, "\r\n");
+            if(pFind){//接收到新行
 
-                /*匹配指令返回结果看是否接收到完整响应*/
-                if(IS_AT_RSP_OK(pFind)){
-                    rsp.isPositive = TRUE;
-                    break; 
-                }else if(IS_AT_RSP_ERR(pFind)){
-                    rsp.isPositive = FALSE;
-                    break;
-                }else if((FALSE == isStrRcved) && (NULL == pRspHdl) && (NULL != pArg) && (strstr(pFind, pArg))){
-                    //MD_DEBUG("String rcved!\r\n");
-                    isStrRcved = TRUE;
+                if(TRUE == isCompaStr){
+                    if((FALSE == isStrRcved) && strstr(pCurFind, pArg)){
+                        isStrRcved = TRUE;
+                        waitCnt = 0;
+                    }
+
+                    if(TRUE == isStrRcved){//在已经匹配到目标字符串后再接收到"OK"或"ERROR"时应该立即结束接收
+                        if(IS_AT_RSP_OK(pCurFind)){
+                            rsp.isPositive = TRUE;
+                            break;
+                        }else if(IS_AT_RSP_ERR(pCurFind)){
+                            rsp.isPositive = FALSE;
+                            break;
+                        }
+                    }
+                }else{
+                    if(IS_AT_RSP_OK(pCurFind)){
+                        rsp.isPositive = TRUE;
+                        break;
+                    }else if(IS_AT_RSP_ERR(pCurFind)){
+                        rsp.isPositive = FALSE;
+                        break;
+                    }
                 }
+
+                pCurFind = pFind + 2;//下次从下一行开始找以提高速度
             }
             
-            if(rcvIndex >= (sizeof(rsp.buf)-1)){
-                MD_DEBUG("AT cmd rcv buf overflow!\r\n");
-                return MDE_BUFOVFL; //接收缓存溢出
-            }
         }else{
             if(TRUE == isStrRcved){
                 /*即使匹配到也继续接收以完整接收整个响应信息（直到收到"OK"）或者超时*/
-                if((TRUE == rsp.isPositive) || (waitCnt >= 10)){ //10*10ms
+                if((waitCnt >= 10)){ //10*10ms
                     break;
                 }
             }
@@ -91,7 +135,7 @@ eMDErrCode MD_ATCmdSnd(const uint8_t *pCmd, uint8_t delay, ATCmdRspHdl pRspHdl, 
         }
     } while (waitCnt <= (delay*100u));
     
-    /*若响应成功，调用回调函数进行处理，否则返回超时*/
+    /*若响应成功，调用回调函数进行处理或直接返回结果，否则返回超时*/
     if(waitCnt <= (delay*100u)){
         rsp.len = rcvIndex;
         
@@ -138,7 +182,6 @@ eMDErrCode MD_ATDataSend(const uint8_t *pCmd, const uint8_t *pData, uint16_t len
     uint16_t rcvIndex = 0;
     uint16_t rcvLen;
     uint8_t rcvBuf[MD_RCV_BUF_SIZE];
-    uint8_t *pFind = rcvBuf;
     BOOLEAN isEnterRcved = FALSE;
     
     /*发送AT命令到串口上*/
@@ -157,8 +200,8 @@ eMDErrCode MD_ATDataSend(const uint8_t *pCmd, const uint8_t *pData, uint16_t len
             rcvBuf[rcvIndex] = '\0';    //确保其为 NULL terminated string
 
             if(strstr(rcvBuf, ">")){
-                break;//succeed! can send data now
-            }else if(IS_AT_RSP_ERR(pFind)){
+                break;              //指令响应正确，可以开始传输数据
+            }else if(IS_AT_RSP_ERR(rcvBuf)){
                 MD_DEBUG("rcv:%s", rcvBuf);
                 return MDE_ERROR;   //发送失败 
             }
@@ -197,10 +240,10 @@ eMDErrCode MD_ATDataSend(const uint8_t *pCmd, const uint8_t *pData, uint16_t len
             /*检查是否接收到回车换行符，并且是完整响应*/
             if(strstr(rcvBuf, "\r\n")){
 
-                if(IS_AT_RSP_OK(pFind)){
+                if(IS_AT_RSP_OK(rcvBuf)){
                     MD_DEBUG("Data snd succ!\r\n");
                     return MDE_OK;      //发送成功 
-                }else if(IS_AT_RSP_ERR(pFind)){
+                }else if(IS_AT_RSP_ERR(rcvBuf)){
                     MD_DEBUG("Data snd failed!\r\n");
                     return MDE_ERROR;   //发送失败
                 }
@@ -280,7 +323,7 @@ eMDErrCode MD_ATCmdTableSnd(const sMDAtCmdItem *pTable, uint8_t size)
 *     [in]delay:    接收最大等待时间(s)；
 * 返回值： 成功、失败、指令发送实发、超时 、接收缓存溢出
 */ 
-eMDErrCode MD_GetURCMsg(const uint8_t *pUrc, sMDAtCmdRsp *pRsp, uint8_t delay)
+eMDErrCode MD_AtGetURCMsg(const uint8_t *pUrc, sMDAtCmdRsp *pRsp, uint8_t delay)
 {
     uint32_t waitCnt = 0;
     uint16_t rcvIndex = 0;
@@ -328,7 +371,7 @@ eMDErrCode MD_GetURCMsg(const uint8_t *pUrc, sMDAtCmdRsp *pRsp, uint8_t delay)
 
 
 /*
-* 函数功能：根据指令返回结果判断模块当前网络状态 
+* 函数功能：根据指令返回结果判断模块当前网络状态是否已注册
 * 参数说明：
 *     pRsp: 传入参数，接收到的AT指令响应
 */ 
