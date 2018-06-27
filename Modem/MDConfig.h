@@ -1,23 +1,23 @@
 /* 
-* æ–‡ä»¶åç§°ï¼šMDConfig.h
-* æ‘˜    è¦ï¼šModemLibçš„å‚æ•°é…ç½®æ–‡ä»¶ï¼Œå¯ä»¥é€šè¿‡è°ƒæ•´è¯¥æ–‡ä»¶çš„ç›¸å…³å®å®šä¹‰å€¼æ¥æ”¹å˜åº“çš„å‚æ•°ï¼Œå¦‚æŽ¥æ”¶
-*           ç¼“å­˜å¤§å°ã€ATæŒ‡ä»¤äº¤äº’ç­‰å¾…æ—¶é—´ã€æŒ‡ä»¤å‘é€é—´éš”åŠè°ƒè¯•è¾“å‡ºç­‰ç­‰ã€‚
+* ÎÄ¼þÃû³Æ£ºMDConfig.h
+* Õª    Òª£ºModemLibµÄ²ÎÊýÅäÖÃÎÄ¼þ£¬¿ÉÒÔÍ¨¹ýµ÷Õû¸ÃÎÄ¼þµÄÏà¹Øºê¶¨ÒåÖµÀ´¸Ä±ä¿âµÄ²ÎÊý£¬Èç½ÓÊÕ
+*           »º´æ´óÐ¡¡¢ATÖ¸Áî½»»¥µÈ´ýÊ±¼ä¡¢Ö¸Áî·¢ËÍ¼ä¸ô¼°µ÷ÊÔÊä³öµÈµÈ¡£
 *  
-* ä½œ    è€…ï¼š
-* åˆ›å»ºæ—¥æœŸï¼š2018å¹´6æœˆ18æ—¥ 
+* ×÷    Õß£ºÕÅÔÆÁú
+* ´´½¨ÈÕÆÚ£º2018Äê6ÔÂ18ÈÕ 
 *
-* ä¿®æ”¹åŽ†å²
-* ä¿®æ”¹æ‘˜è¦ï¼š
-* ä¿®æ”¹ä½œè€…ï¼š
-* ä¿®æ”¹æ—¶é—´ï¼š
+* ÐÞ¸ÄÀúÊ·
+* ÐÞ¸ÄÕªÒª£º
+* ÐÞ¸Ä×÷Õß£º
+* ÐÞ¸ÄÊ±¼ä£º
 */
 
 #ifndef __MD_CONFIG_H 
 #define __MD_CONFIG_H
 
 
-/************ è°ƒè¯•ç›¸å…³ **************/
-#define MD_DEBUG_EN 1           /*è°ƒè¯•è¾“å‡ºå¼€å…³*/
+/************ µ÷ÊÔÏà¹Ø **************/
+#define MD_DEBUG_EN                             1       /*µ÷ÊÔÊä³ö¿ª¹Ø*/
 
 #if MD_DEBUG_EN
 #include <stdio.h>
@@ -26,12 +26,11 @@
 #define MD_DEBUG
 #endif
 
-
-/************ é…ç½®å‚æ•° **************/
-#define MD_RCV_BUF_SIZE 200         /*æŽ¥æ”¶ATæŒ‡ä»¤å“åº”çš„ç¼“å­˜åŒºå¤§å°ï¼ˆBYTE)*/
-#define MD_ATCMD_ITV 50             /*ATæŒ‡ä»¤è¡¨æŒ‡ä»¤é—´å‘é€æ—¶é—´é—´éš”ï¼ˆå•ä½ï¼šmsï¼‰*/
-#define MD_ATCMD_ITV_WHENERR 1000   /*ATæŒ‡ä»¤è¡¨å‘é€æŒ‡ä»¤å“åº”é”™è¯¯æ—¶é‡å‘æ—¶é—´é—´éš”ï¼ˆå•ä½ï¼šmsï¼‰*/
-#define MD_MAX_SOCK_NUM 10          /*æœ€å¤§Socketé“¾æŽ¥æ•°*/
+/************ ÅäÖÃ²ÎÊý **************/
+#define MD_RCV_BUF_SIZE                         200     /*½ÓÊÕATÖ¸ÁîÏìÓ¦µÄ»º´æÇø´óÐ¡£¨BYTE)*/
+#define MD_ATCMD_ITV                            50      /*ATÖ¸Áî±íÖ¸Áî¼ä·¢ËÍÊ±¼ä¼ä¸ô£¨µ¥Î»£ºms£©*/
+#define MD_ATCMD_ITV_WHENERR                    1000    /*ATÖ¸Áî±í·¢ËÍÖ¸ÁîÏìÓ¦´íÎóÊ±ÖØ·¢Ê±¼ä¼ä¸ô£¨µ¥Î»£ºms£©*/
+#define MD_MAX_SOCK_NUM                         10      /*×î´óSocketÁ´½ÓÊý£¬Êµ¼Ê¿ÉÊ¹ÓÃSocket¸öÊý¸ù¾ÝÄ£¿é²»Í¬¶ø²»Í¬£¬È¡¶þÕßÖÐ×îÐ¡Öµ*/
 
 #endif /*__MD_CONFIG_H*/ 
 

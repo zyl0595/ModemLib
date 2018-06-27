@@ -1,14 +1,14 @@
 /* 
-* æ–‡ä»¶åç§°ï¼šMD_CLM920.c
-* æ‘˜    è¦ï¼š
+* ÎÄ¼şÃû³Æ£ºMD_CLM920.c
+* Õª    Òª£º
 *  
-* ä½œ    è€…ï¼š
-* åˆ›å»ºæ—¥æœŸï¼š2018å¹´6æœˆ18æ—¥ 
+* ×÷    Õß£ºÕÅÔÆÁú
+* ´´½¨ÈÕÆÚ£º2018Äê6ÔÂ18ÈÕ 
 *
-* ä¿®æ”¹å†å²
-* ä¿®æ”¹æ‘˜è¦ï¼š
-* ä¿®æ”¹ä½œè€…ï¼š
-* ä¿®æ”¹æ—¶é—´ï¼š
+* ĞŞ¸ÄÀúÊ·
+* ĞŞ¸ÄÕªÒª£º
+* ĞŞ¸Ä×÷Õß£º
+* ĞŞ¸ÄÊ±¼ä£º
 */
 
 #include "MDAtCmd.h"
@@ -16,9 +16,13 @@
 #include <string.h>
 #include "MDTools.h"
 
-/***************** ç§æœ‰ATæŒ‡ä»¤ ********************/
-static uint8_t s_cmdATIPNETOPEN[] = "AT+IPNETOPEN\r\n"; /*é©±åŠ¨å†…åµŒTCPIPåè®®æ ˆæ‰“å¼€Socketç½‘ç»œé“¾æ¥ï¼Œè·å–IPåœ°å€*/
-static uint8_t s_cmdATIPADDR[] = "AT+IPADDR\r\n";       /*è·å–å½“å‰IPåœ°å€*/
+/***************** Ë½ÓĞATÖ¸Áî ********************/
+static uint8_t s_cmdATIPNETOPEN[] = "AT+IPNETOPEN\r\n"; /*Çı¶¯ÄÚÇ¶TCPIPĞ­ÒéÕ»´ò¿ªSocketÍøÂçÁ´½Ó£¬»ñÈ¡IPµØÖ·*/
+static uint8_t s_cmdATIPADDR[] = "AT+IPADDR\r\n";       /*»ñÈ¡µ±Ç°IPµØÖ·*/
+
+/***************** ÒıÈëµÄÍâ²¿È«¾Ö±äÁ¿ ********************/
+extern sMDModem g_MdInfo;
+
 
 eMDErrCode CLM920_ATI_Hdl(sMDAtCmdRsp *pRsp, void *pArg)
 {
@@ -46,7 +50,7 @@ eMDErrCode CLM920_ATIPNETOPEN_Hdl(sMDAtCmdRsp *pRsp, void *pArg)
 }
 
 
-//è·å–æ¨¡å—å½“å‰IPåœ°å€å›è°ƒå‡½æ•°
+//»ñÈ¡Ä£¿éµ±Ç°IPµØÖ·»Øµ÷º¯Êı
 eMDErrCode CLM920_ATIPADDR_Hdl(sMDAtCmdRsp *pRsp, void *pArg)
 {
     eMDErrCode ret = MDE_ERROR;
@@ -59,7 +63,7 @@ eMDErrCode CLM920_ATIPADDR_Hdl(sMDAtCmdRsp *pRsp, void *pArg)
         if(NULL != pFind){
             pFind += 9;//strlen("+IPADDR: ")
             
-            ret = MD_Str2Ip(pIp, pFind);//æå–è¿”å›æ•°æ®ä¸­çš„IPä¿¡æ¯å¹¶å­˜æ”¾åˆ°*pIpä¸­
+            ret = MD_Str2Ip(pIp, pFind);//ÌáÈ¡·µ»ØÊı¾İÖĞµÄIPĞÅÏ¢²¢´æ·Åµ½*pIpÖĞ
 
             if(MDE_OK == ret){
                 MD_DEBUG("Got IP addr:%d.%d.%d.%d\r\n", pIp->sVal.v4, pIp->sVal.v3, pIp->sVal.v2, pIp->sVal.v1);
@@ -75,13 +79,15 @@ eMDErrCode CLM920_ATIPADDR_Hdl(sMDAtCmdRsp *pRsp, void *pArg)
     return ret;
 }
 
-/*å°†æ¨¡å—åˆå§‹åŒ–åˆ°ç½‘ç»œæ³¨å†ŒæˆåŠŸçŠ¶æ€éœ€è¦å‘é€çš„ATæŒ‡ä»¤è¡¨*/ 
+/*½«Ä£¿é³õÊ¼»¯µ½ÍøÂç×¢²á³É¹¦×´Ì¬ĞèÒª·¢ËÍµÄATÖ¸Áî±í*/ 
 const sMDAtCmdItem s_CLM920InitCmdTable[] = {
+    {cmdATZ,        3,  5,  NULL,                  NULL},
     {cmdATE0,       3,  5,  NULL,                  NULL},
     {cmdATI,        3,  5,  CLM920_ATI_Hdl,        "CLM920"},
     {cmdATCPIN,     3,  5,  NULL,                  "READY"},
+    {cmdATCSQ,      3,  5,  MD_ATCSQ_HDL,          (void*)&g_MdInfo},
     {cmdATCGDCONT,  3,  5,  NULL,                  "OK"},
-    {cmdATCGATT,    3,  5,  NULL,                  "+CGATT: 1"},
+    {cmdATCGATT,    3,  5,  MD_ATCGATT_HDL,        NULL},
     {cmdATCGACT,    3,  5,  NULL,                  "OK"},
     {cmdATCGREG,    3,  5,  MD_ATCGREG_HDL,        NULL},
 };
@@ -92,30 +98,30 @@ eMDErrCode CLM920_Init(void)
     return MD_ATCmdTableSnd(s_CLM920InitCmdTable, TABLE_SIZE(s_CLM920InitCmdTable));
 }
 
-eMDErrCode CLM920_SokctInit(sMDModemInfo *pMdInfo)
+eMDErrCode CLM920_SokctInit(sMDModem *pMdInfo)
 {
     sMDAtCmdRsp rsp;
     eMDErrCode ret;
 
-    /*è§¦å‘å»ºç«‹Socketé“¾æ¥*/
-    ret = MD_ATCmdSnd(s_cmdATIPNETOPEN, 10, CLM920_ATIPNETOPEN_Hdl, NULL);
+    /*´¥·¢½¨Á¢SocketÁ´½Ó*/
+    ret = MD_ATCmdSndWithCb(s_cmdATIPNETOPEN, 10, CLM920_ATIPNETOPEN_Hdl, NULL);
     if(MDE_ERROR == ret){
         MD_DEBUG("IP net open failed");
         return MDE_ERROR;
     }
 
-    /*æ£€æŸ¥Socketå»ºç«‹æ˜¯å¦æˆåŠŸ*/
+    /*¼ì²éSocket½¨Á¢ÊÇ·ñ³É¹¦*/
     if(MDE_ALREADYON != ret){
 
-        ret = MD_AtGetURCMsg(urcIPNETOPEN, &rsp, 1);//ç­‰å¾…URC 1ç§’é’Ÿï¼Œç­‰ä¸åˆ°å°±ä¸»åŠ¨æŸ¥
+        ret = MD_AtGetURCMsg(urcIPNETOPEN, &rsp, 1);//µÈ´ıURC 1ÃëÖÓ£¬µÈ²»µ½¾ÍÖ÷¶¯²é
 
         if(MDE_OK == ret){
             if(!strstr(rsp.buf, "+IPNETOPEN: 0")){
                 MD_DEBUG("IP net open failed");
                 return MDE_ERROR;
             }
-        }else{//æ²¡æœ‰æ¥æ”¶åˆ°ååº”Socketè¿æ¥çŠ¶æ€çš„URCï¼Œä¸»åŠ¨è¿›è¡ŒæŸ¥è¯¢
-            ret = MD_ATCmdSnd("AT+IPNETOPEN?\r\n", 10, NULL, "IPNETOPEN: 1");
+        }else{//Ã»ÓĞ½ÓÊÕµ½·´Ó¦SocketÁ¬½Ó×´Ì¬µÄURC£¬Ö÷¶¯½øĞĞ²éÑ¯
+            ret = MD_ATCmdSndWithCb("AT+IPNETOPEN?\r\n", 10, NULL, "IPNETOPEN: 1");
             if(MDE_OK != ret){
                 MD_DEBUG("IP net open failed");
                 return MDE_ERROR;
@@ -123,8 +129,8 @@ eMDErrCode CLM920_SokctInit(sMDModemInfo *pMdInfo)
         }
     }
 
-    /*è·å–æœ¬åœ°IPåœ°å€*/
-    ret = MD_ATCmdSnd(s_cmdATIPADDR, 5, CLM920_ATIPADDR_Hdl, &(pMdInfo->localAddr));
+    /*»ñÈ¡±¾µØIPµØÖ·*/
+    ret = MD_ATCmdSndWithCb(s_cmdATIPADDR, 5, CLM920_ATIPADDR_Hdl, &(pMdInfo->localAddr));
 
     return ret;
 }
@@ -152,14 +158,14 @@ eMDErrCode CLM920_SendIpData(uint8_t fd, const sMDSockData *pData)
 }
 
 
-//åŸŸåè§£ææœåŠ¡
+//ÓòÃû½âÎö·şÎñ
 eMDErrCode CLM920_GetHostByName(const char *pName, sMDIPv4Addr *pAddr)
 {
     eMDErrCode ret;
     uint8_t cmdBuf[100];
 
     sprintf(cmdBuf, "AT+CDNSGIP=\"%s\"\r\n", pName);
-    ret = MD_ATCmdSnd(cmdBuf, 30, CLM920_ATIPADDR_Hdl, (void*)pAddr);
+    ret = MD_ATCmdSndWithCb(cmdBuf, 30, CLM920_ATIPADDR_Hdl, (void*)pAddr);
 
     return ret;
 }

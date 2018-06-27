@@ -1,3 +1,16 @@
+/* 
+* ÎÄ¼şÃû³Æ£ºMDType.h
+* Õª    Òª£º¿âÊ¹ÓÃµ½µÄ×Ô¶¨ÒåÀàĞÍ¶¨Òå
+*  
+* ×÷    Õß£ºÕÅÔÆÁú
+* ´´½¨ÈÕÆÚ£º2018Äê6ÔÂ18ÈÕ 
+*
+* ĞŞ¸ÄÀúÊ·
+* ĞŞ¸ÄÕªÒª£º
+* ĞŞ¸Ä×÷Õß£º
+* ĞŞ¸ÄÊ±¼ä£º
+*/
+
 #ifndef __MD_TYPE_H
 #define __MD_TYPE_H
 
@@ -12,87 +25,116 @@
 #define TRUE 1
 #endif
 
-#ifndef BOOLEAN
-#define BOOLEAN uint8_t 
+#ifndef bool
+#define bool uint8_t 
 #endif
 
-/*é”™è¯¯ç±»å‹å®šä¹‰*/ 
+/*´íÎóÀàĞÍ¶¨Òå*/ 
 typedef enum{
-    MDE_OK = 0,     /*æ­£ç¡®*/
-    MDE_TTYSERR,    /*ä¸²å£è¯»å†™é”™è¯¯*/
-    MDE_BUFOVFL,    /*æ¥æ”¶ç¼“å­˜æº¢å‡º*/
-    MDE_TIMEOUT,    /*è¶…æ—¶*/
-    MDE_ALREADYON,  /*å·²æ‰“å¼€*/
-    MDE_ERROR       /*æœªå®šä¹‰é”™è¯¯*/
+    MDE_OK = 0,     /*ÕıÈ·*/
+    MDE_TTYSERR,    /*´®¿Ú¶ÁĞ´´íÎó*/
+    MDE_BUFOVFL,    /*½ÓÊÕ»º´æÒç³ö*/
+    MDE_TIMEOUT,    /*³¬Ê±*/
+    MDE_ALREADYON,  /*ÒÑ´ò¿ª*/
+    MDE_ERROR       /*Î´¶¨Òå´íÎó*/
 }eMDErrCode;
 
-/*Socketè¿æ¥çŠ¶æ€*/
+/*SocketÁ¬½Ó×´Ì¬*/
 typedef enum{
-    SOCK_CLOSED = 0,   /*æ–­å¼€*/
-    SOCK_OPENED,       /*æ‰“å¼€ï¼Œå·²è¿æ¥*/
-    SOCK_ERROR,        /*å‡ºé”™*/
+    SOCK_CLOSED = 0,   /*¶Ï¿ª*/
+    SOCK_OPENED,       /*´ò¿ª£¬ÒÑÁ¬½Ó*/
+    SOCK_ERROR,        /*³ö´í*/
 }eMDSockState;
 
-/*Socketç±»å‹*/
+/*SocketÀàĞÍ*/
 typedef enum{
     SOCK_STREAM = 1,    /*TCP*/
     SOCK_DGRAM  = 2,    /*UDP*/
     //SOCK_RAW  = 3     /*RAW*/
 }eMDSockType;
 
-/*æ¨¡å—è¿”å›ATæŒ‡ä»¤å“åº”å®šä¹‰*/ 
+/*Ä£¿é·µ»ØATÖ¸ÁîÏìÓ¦¶¨Òå*/ 
 typedef struct{
-    uint8_t isPositive;           /*æ˜¯å¦æ˜¯ç§¯æå“åº”ï¼ŒæŒ‡ä»¤è¿”å›"OK"æ—¶ä¸ºTRUEï¼Œè¿”å›"ERROR"æˆ–å…¶ä»–æ—¶ä¸ºFALSE*/
-    uint8_t buf[MD_RCV_BUF_SIZE]; /*æŒ‡ä»¤è¿”å›æ•°æ®æ¥æ”¶ç¼“å­˜*/
-    uint16_t len;                 /*å›åº”æ•°æ®é•¿åº¦*/ 
+    uint8_t isPositive;           /*ÊÇ·ñÊÇ»ı¼«ÏìÓ¦£¬Ö¸Áî·µ»Ø"OK"Ê±ÎªTRUE£¬·µ»Ø"ERROR"»òÆäËûÊ±ÎªFALSE*/
+    uint8_t buf[MD_RCV_BUF_SIZE]; /*Ö¸Áî·µ»ØÊı¾İ½ÓÊÕ»º´æ*/
+    uint16_t len;                 /*»ØÓ¦Êı¾İ³¤¶È*/ 
 }sMDAtCmdRsp;
 
 /*
-* ATæŒ‡ä»¤å“åº”å¤„ç†å›è°ƒå‡½æ•°
-* å‚æ•°å®šä¹‰ï¼š
-*   pRspï¼šæŒ‡ä»¤å›åº”æ•°æ®
+* ATÖ¸ÁîÏìÓ¦´¦Àí»Øµ÷º¯Êı
+* ²ÎÊı¶¨Òå£º
+*   pRsp£ºÖ¸Áî»ØÓ¦Êı¾İ
 */
 typedef eMDErrCode (*ATCmdRspHdl)(sMDAtCmdRsp *pRsp, void *pArg); 
 
-/*ATæŒ‡ä»¤å®šä¹‰*/
+/*ATÖ¸Áî¶¨Òå*/
 typedef struct{
-    const uint8_t *pCmd;  /*æŒ‡ä»¤*/
-    uint8_t tryTms;       /*æœ€å¤§é‡è¯•æ¬¡æ•°*/
-    uint8_t delay;        /*æŒ‡ä»¤å“åº”ç­‰å¾…æ—¶é—´(å•ä½ï¼šs)*/
-    ATCmdRspHdl rspHdl;   /*æŒ‡ä»¤å“åº”å¤„ç†å›è°ƒå‡½æ•°ï¼Œæ²¡æœ‰æ—¶ç½®NULL*/
-    void *pArg;           /*å›è°ƒå‡½æ•°å‚æ•°æˆ–åŒ¹é…è¿”å›æ•°æ®çš„ç›®æ ‡å­—ç¬¦ä¸²*/
+    const uint8_t *pCmd;  /*Ö¸Áî*/
+    uint8_t tryTms;       /*×î´óÖØÊÔ´ÎÊı*/
+    uint8_t delay;        /*Ö¸ÁîÏìÓ¦µÈ´ıÊ±¼ä(µ¥Î»£ºs)*/
+    ATCmdRspHdl rspHdl;   /*Ö¸ÁîÏìÓ¦´¦Àí»Øµ÷º¯Êı£¬Ã»ÓĞÊ±ÖÃNULL*/
+    void *pArg;           /*»Øµ÷º¯Êı²ÎÊı»òÆ¥Åä·µ»ØÊı¾İµÄÄ¿±ê×Ö·û´®*/
 }sMDAtCmdItem;
 
-/*é€šè¿‡ATæŒ‡ä»¤å‘é€Tcpæ•°æ®çš„æ•°æ®ç»“æ„å®šä¹‰*/
+/*Í¨¹ıATÖ¸Áî·¢ËÍTcpÊı¾İµÄÊı¾İ½á¹¹¶¨Òå*/
 typedef struct{
-    const uint8_t *pData;   /*è¦å‘é€çš„æ•°æ®*/
-    uint16_t len;           /*æ•°æ®é•¿åº¦*/
-    const uint8_t *pIp;     /*ç›®çš„Ipåœ°å€*/
-    uint16_t port;          /*ç›®çš„ç«¯å£å·*/
+    const uint8_t *pData;   /*Òª·¢ËÍµÄÊı¾İ*/
+    uint16_t len;           /*Êı¾İ³¤¶È*/
+    const uint8_t *pIp;     /*Ä¿µÄIpµØÖ·*/
+    uint16_t port;          /*Ä¿µÄ¶Ë¿ÚºÅ*/
 }sMDSockData;
 
 typedef union{
     uint32_t val;
     struct{
-        uint8_t v1; /*ä½ä½*/
-        uint8_t v2; /*æ¬¡ä½ä½*/
-        uint8_t v3; /*æ¬¡é«˜ä½*/
-        uint8_t v4; /*é«˜ä½*/
+        uint8_t v1; /*µÍÎ»*/
+        uint8_t v2; /*´ÎµÍÎ»*/
+        uint8_t v3; /*´Î¸ßÎ»*/
+        uint8_t v4; /*¸ßÎ»*/
     }sVal;
 }sMDIPv4Addr;
 
-/*Socket Control Block æ§åˆ¶å—*/
+/*Socket Control Block ¿ØÖÆ¿é*/
 typedef struct{
-    eMDSockType type;   /*Socketç±»å‹*/
-    eMDSockState state; /*Socketè¿æ¥çŠ¶æ€*/
-    sMDIPv4Addr ip;     /*å¯¹ç«¯IPåœ°å€*/
-    uint16_t    port;   /*å¯¹ç«¯ç«¯å£å·*/
-}sMDSocketCB;
+    eMDSockType type;   /*SocketÀàĞÍ*/
+    eMDSockState state; /*SocketÁ¬½Ó×´Ì¬(ÓÃ×÷½¨Á¢Á¬½ÓÊ±Õâ¸ö×Ö¶Î²»ÓÃÀí»á)*/
+    sMDIPv4Addr ip;     /*¶Ô¶ËIPµØÖ·*/
+    uint16_t    port;   /*¶Ô¶Ë¶Ë¿ÚºÅ*/
+}sMDSocket;
 
-/*å­˜å‚¨æ¨¡å—å„ç±»çŠ¶æ€ä¿¡æ¯*/
+/*Ä£¿é×´Ì¬*/
+typedef enum{
+    MDS_BEGIN = 0,  /*³õÊ¼×´Ì¬*/
+    MDS_CHECK,      /*×´Ì¬¼ì²â£º²å¿¨×´Ì¬¡¢ĞÅºÅÖÊÁ¿¡¢µ±Ç°ÍøÂçÔËÓªÉÌ¡¢ÍøÂç×¢²á×´Ì¬¡¢ÍøÂç×¢²á×´Ì¬*/
+    MDS_READY,      /*×¼±¸¾ÍĞ÷£º¿É½¨Á¢TCP¡¢UDPÁ´Â·½øĞĞÊı¾İÊÕ·¢×´Ì¬*/
+    MDS_FAILED      /*Î´¶¨Òå´íÎó×´Ì¬*/
+}eMDStates;
+
+
+/*ÍøÂçĞÅºÅÖÊÁ¿*/
 typedef struct{
-    sMDIPv4Addr localAddr;                  /*å»ºç«‹ç½‘ç»œè¿æ¥ä¹‹åè·å¾—çš„æœ¬æœºIPåœ°å€*/
-    sMDSocketCB sockets[MD_MAX_SOCK_NUM];   /*Socketåˆ—è¡¨*/
+    uint8_t rssi;   /*½ÓÊÕĞÅºÅÇ¿¶ÈÖ¸Ê¾*/
+    uint8_t ber;    /*Í¨µÀÎóÂëÂÊ*/
+}sMDCSQ;
+
+
+/*´æ´¢Ä£¿é¸÷Àà×´Ì¬ĞÅÏ¢*/
+typedef struct{
+    uint16_t type;      /*Ä£¿éĞÍºÅ*/
+    sMDCSQ   csq;       /*ĞÅºÅÖÊÁ¿*/
+    uint8_t IMEI[20];
+    uint8_t IMSI[20];
+
 }sMDModemInfo;
+
+
+typedef struct{
+    eMDStates   state;
+    sMDModemInfo mdInfo;                    /*Ä£¿éĞÅÏ¢£ºÀàĞÍ¡¢³§¼ÒĞÅÏ¢¡¢ĞÅºÅÖÊÁ¿¡¢ÍøÂç×´Ì¬¡¢IMEI¡¢IMSI*/
+    sMDIPv4Addr localAddr;                  /*½¨Á¢ÍøÂçÁ¬½ÓÖ®ºó»ñµÃµÄ±¾»úIPµØÖ·*/
+    sMDSocket   sockets[MD_MAX_SOCK_NUM];   /*SocketÁĞ±í*/
+    uint8_t     maxSockNum;                 /*¸ù¾İÄ£¿é²»Í¬Ö§³ÖµÄ×î´óSocketÁ´½ÓÊı²»Í¬*/
+}sMDModem;
+
 #endif //__MD_TYPE_H
 

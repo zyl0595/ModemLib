@@ -1,26 +1,28 @@
 /* 
-* æ–‡ä»¶åç§°ï¼šMDATCmd.c
-* æ‘˜    è¦ï¼šä»¥å¸¸é‡å­—ç¬¦ä¸²çš„å½¢å¼å®šä¹‰ä¸€äº›é€šç”¨ATæŒ‡ä»¤ä»¥ä¾›å„ä¸ªå…·ä½“çš„æ¨¡å—è¿›è¡Œäº¤äº’æ—¶ä½¿ç”¨ï¼Œæœ¬æ–‡æ¡£
-*           ä¸»è¦ä¸ºäº†å°†é€šç”¨çš„ATæŒ‡ä»¤é›†ä¸­åœ¨è¿™é‡Œä»¥æ–¹ä¾¿æŸ¥é˜…ç®¡ç†
+* ÎÄ¼şÃû³Æ£ºMDATCmd.c
+* Õª    Òª£ºÒÔ³£Á¿×Ö·û´®µÄĞÎÊ½¶¨ÒåÒ»Ğ©Í¨ÓÃATÖ¸ÁîÒÔ¹©¸÷¸ö¾ßÌåµÄÄ£¿é½øĞĞ½»»¥Ê±Ê¹ÓÃ£¬±¾ÎÄµµ
+*           Ö÷ÒªÎªÁË½«Í¨ÓÃµÄATÖ¸Áî¼¯ÖĞÔÚÕâÀïÒÔ·½±ã²éÔÄ¹ÜÀí
 *  
-* ä½œ    è€…ï¼š
-* åˆ›å»ºæ—¥æœŸï¼š2018å¹´6æœˆ18æ—¥ 
+* ×÷    Õß£ºÕÅÔÆÁú
+* ´´½¨ÈÕÆÚ£º2018Äê6ÔÂ18ÈÕ 
 *
-* ä¿®æ”¹å†å²
-* ä¿®æ”¹æ‘˜è¦ï¼š
-* ä¿®æ”¹ä½œè€…ï¼š
-* ä¿®æ”¹æ—¶é—´ï¼š
+* ĞŞ¸ÄÀúÊ·
+* ĞŞ¸ÄÕªÒª£º
+* ĞŞ¸Ä×÷Õß£º
+* ĞŞ¸ÄÊ±¼ä£º
 */
 
-/********************************** é€šç”¨ATæŒ‡ä»¤å®šä¹‰ **************************************/
-const unsigned char cmdATE0[] = "ATE0\r\n";             /*å…³é—­å›æ˜¾*/
-const unsigned char cmdATE1[] = "ATE1\r\n";             /*æ‰“å¼€å›æ˜¾*/
-const unsigned char cmdATI[] = "ATI\r\n";               /*è·å–æ¨¡å—ä¿¡æ¯*/
-const unsigned char cmdATCPIN[] = "AT+CPIN?\r\n";       /*æ£€æŸ¥SIMçŠ¶æ€*/
-const unsigned char cmdATCGDCONT[] = "AT+CGDCONT=1,\"IP\",\"CMNET\"\r\n";/*å®šä¹‰PDPä¸Šä¸‹æ–‡*/
-const unsigned char cmdATCGATT[] = "AT+CGATT?\r\n";     /*æ£€æŸ¥ç½‘ç»œé™„ç€çŠ¶æ€*/
-const unsigned char cmdATCGACT[] = "AT+CGACT=1,1\r\n";  /*æ¿€æ´»PDPä¸Šä¸‹æ–‡*/
-const unsigned char cmdATCGREG[] = "AT+CGREG?\r\n";     /*æ£€æŸ¥ç½‘ç»œæ³¨å†ŒçŠ¶æ€*/
+/********************************** Í¨ÓÃATÖ¸Áî¶¨Òå **************************************/
+const unsigned char cmdATZ[] = "ATZ\r\n";               /*»Ö¸´³ö³§ÉèÖÃ*/
+const unsigned char cmdATE0[] = "ATE0\r\n";             /*¹Ø±Õ»ØÏÔ*/
+const unsigned char cmdATE1[] = "ATE1\r\n";             /*´ò¿ª»ØÏÔ*/
+const unsigned char cmdATI[] = "ATI\r\n";               /*»ñÈ¡Ä£¿éĞÅÏ¢*/
+const unsigned char cmdATCPIN[] = "AT+CPIN?\r\n";       /*¼ì²éSIM×´Ì¬*/
+const unsigned char cmdATCSQ[] = "AT+CSQ\r\n";          /*»ñÈ¡ĞÅºÅÖÊÁ¿*/
+const unsigned char cmdATCGDCONT[] = "AT+CGDCONT=1,\"IP\",\"CMNET\"\r\n";/*¶¨ÒåPDPÉÏÏÂÎÄ*/
+const unsigned char cmdATCGATT[] = "AT+CGATT?\r\n";     /*¼ì²éÍøÂç¸½×Å×´Ì¬*/
+const unsigned char cmdATCGACT[] = "AT+CGACT=1,1\r\n";  /*¼¤»îPDPÉÏÏÂÎÄ*/
+const unsigned char cmdATCGREG[] = "AT+CGREG?\r\n";     /*¼ì²éÍøÂç×¢²á×´Ì¬*/
 
-/********************************** é€šç”¨éè¯·æ±‚ç»“æœç  ************************************/
+/********************************** Í¨ÓÃ·ÇÇëÇó½á¹ûÂë ************************************/
 const unsigned char urcIPNETOPEN[] ="IPNETOPEN";

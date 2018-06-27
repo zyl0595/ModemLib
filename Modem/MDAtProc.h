@@ -1,15 +1,15 @@
 /* 
-* æ–‡ä»¶åç§°ï¼šMDATProc.h
-* æ‘˜    è¦ï¼šæä¾›ä¸€äº›é€šç”¨çš„ATæŒ‡ä»¤äº¤äº’å‡½æ•°çš„å®šä¹‰ï¼Œè¿™äº›å‡½æ•°å¯ä»¥è¢«ç”¨æ¥å‘æ¨¡å—å‘é€
-*           ATæŒ‡ä»¤å¹¶æ¥æ”¶æ¨¡å—å“åº”æ•°æ®
+* ÎÄ¼şÃû³Æ£ºMDATProc.h
+* Õª    Òª£ºÌá¹©Ò»Ğ©Í¨ÓÃµÄATÖ¸Áî½»»¥º¯ÊıµÄ¶¨Òå£¬ÕâĞ©º¯Êı¿ÉÒÔ±»ÓÃÀ´ÏòÄ£¿é·¢ËÍ
+*           ATÖ¸Áî²¢½ÓÊÕÄ£¿éÏìÓ¦Êı¾İ
 *  
-* ä½œ    è€…ï¼š
-* åˆ›å»ºæ—¥æœŸï¼š2018å¹´6æœˆ18æ—¥ 
+* ×÷    Õß£ºÕÅÔÆÁú
+* ´´½¨ÈÕÆÚ£º2018Äê6ÔÂ18ÈÕ 
 *
-* ä¿®æ”¹å†å²
-* ä¿®æ”¹æ‘˜è¦ï¼š
-* ä¿®æ”¹ä½œè€…ï¼š
-* ä¿®æ”¹æ—¶é—´ï¼š
+* ĞŞ¸ÄÀúÊ·
+* ĞŞ¸ÄÕªÒª£º
+* ĞŞ¸Ä×÷Õß£º
+* ĞŞ¸ÄÊ±¼ä£º
 */
 
 #ifndef __MD_AT_PROC_H
@@ -21,14 +21,17 @@
 #define TABLE_SIZE(table) (sizeof(table)/sizeof(table[0]))
 #endif
 
-/********************************** é€šç”¨ATå‘½ä»¤æ“ä½œæ–¹æ³• **************************************/
-eMDErrCode MD_ATCmdSnd(const uint8_t *pCmd, uint8_t delay, ATCmdRspHdl pRspHdl, void *pArg);
+/********************************** Í¨ÓÃATÃüÁî²Ù×÷·½·¨ **************************************/
+eMDErrCode MD_ATCmdSnd(const uint8_t *pCmd, uint8_t delay, sMDAtCmdRsp *pRsp);
+eMDErrCode MD_ATCmdSndWithCb(const uint8_t *pCmd, uint8_t delay, ATCmdRspHdl pRspHdl, void *pArg);
 eMDErrCode MD_ATCmdTableSnd(const sMDAtCmdItem *pTable, uint8_t size);
 eMDErrCode MD_ATDataSend(const uint8_t *pCmd, const uint8_t *pData, uint16_t len, uint8_t delay);
 eMDErrCode MD_AtGetURCMsg(const uint8_t *pUrc, sMDAtCmdRsp *pRsp, uint8_t delay);
 
-/********************************** é€šç”¨ATå‘½ä»¤å›è°ƒå‡½æ•° **************************************/
+/********************************** Í¨ÓÃATÃüÁî»Øµ÷º¯Êı **************************************/
 eMDErrCode MD_ATCGREG_HDL(sMDAtCmdRsp *pRsp, void *pArg);
+eMDErrCode MD_ATCGATT_HDL(sMDAtCmdRsp *pRsp, void *pArg);
+eMDErrCode MD_ATCSQ_HDL(sMDAtCmdRsp *pRsp, void *pArg);
  
 #endif //__MD_AT_PROC_H
 

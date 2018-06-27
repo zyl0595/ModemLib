@@ -1,15 +1,15 @@
 /* 
-* 文件名称：MDPort.c
-* 摘    要：实现移植ModemLib需要实现的函数，用于系统延时，与模块
-*           通信的数据发送和接收缓存读取等
+* �ļ����ƣ�MDPort.c
+* ժ    Ҫ��ʵ����ֲModemLib��Ҫʵ�ֵĺ���������ϵͳ��ʱ����ģ��
+*           ͨ�ŵ����ݷ��ͺͽ��ջ����ȡ��
 *  
-* 作    者：
-* 创建日期：2018年6月18日 
+* ��    �ߣ�������
+* �������ڣ�2018��6��18�� 
 *
-* 修改历史
-* 修改摘要：
-* 修改作者：
-* 修改时间：
+* �޸���ʷ
+* �޸�ժҪ��
+* �޸����ߣ�
+* �޸�ʱ�䣺
 */
 
 #include <Windows.h>
@@ -18,25 +18,25 @@
 #include "Fifo.h"
 
 
-/*************************** 私有定义 ******************************/
-#define MD_COM_BAUD_RATE 115200 /*与模块通信串口波特率*/
-#define MD_COM_FIFO_SIZE 2048   /*与模块通信数据接收FIFO大小（字节）*/
+/*************************** ˽�ж��� ******************************/
+#define MD_COM_BAUD_RATE 115200 /*��ģ��ͨ�Ŵ��ڲ�����*/
+#define MD_COM_FIFO_SIZE 2048   /*��ģ��ͨ�����ݽ���FIFO��С���ֽڣ�*/
 
-/*************************** 私有变量 ******************************/
+/*************************** ˽�б��� ******************************/
 static int s_handle;
 static const unsigned char s_Port[] = "COM4";
 
 static unsigned char s_fifoBuf[MD_COM_FIFO_SIZE];
 static FIFO_BUF s_fifo;
 
-/*************************** 函数实现 ******************************/
+/*************************** ����ʵ�� ******************************/
 /*
-* 函数说明：延时函数
+* ����˵������ʱ����
 *
-* 参    数：
-*   [in] ms:延时时间（单位：ms）
-*   [out]无
-* 返回值：无
+* ��    ����
+*   [in] ms:��ʱʱ�䣨��λ��ms��
+*   [out]��
+* ����ֵ����
 */
 void MD_Delay(unsigned short ms)
 {
@@ -57,38 +57,38 @@ int MD_ReadByte(unsigned char* pCh)
 
 
 /*
-* 函数说明：底层初始化，打开通信串口、初始化数据接收发送
+* ����˵�����ײ��ʼ������ͨ�Ŵ��ڡ���ʼ�����ݽ��շ���
 *
-* 参    数：
-*   [in] 无
-*   [out]无
-* 返回值：成功返回1，失败返回0。
+* ��    ����
+*   [in] ��
+*   [out]��
+* ����ֵ���ɹ�����1��ʧ�ܷ���0��
 */
 int MD_LowLayInit(void)
 {
-    /*打开物理通信口*/
+    /*������ͨ�ſ�*/
     s_handle = uart_open(s_Port, MD_COM_BAUD_RATE);
     if(NULL == s_handle){
         printf("%s open failed!\r\n");
         return 0;
     }
 
-    /*初始化接收缓存*/
-    FifoBufInit(&s_fifo, s_fifoBuf, sizeof(s_fifoBuf));//Windows 平台本身串口接收就实现了一个FIFO
+    /*��ʼ�����ջ���*/
+    FifoBufInit(&s_fifo, s_fifoBuf, sizeof(s_fifoBuf));//Windows ƽ̨�������ڽ��վ�ʵ����һ��FIFO
 
-    /*创建数据接收线程*/
+    /*�������ݽ����߳�*/
 
     return 1;
 }
 
 
 /*
-* 函数说明：写串口（向模块发送数据）
+* ����˵����д���ڣ���ģ�鷢�����ݣ�
 * 
-* 参    数：
-*   [in] pSrc:  指向要发送的数据
-*   [in] len:   要发送的数据字节数
-* 返回值：  实际发送的字节数
+* ��    ����
+*   [in] pSrc:  ָ��Ҫ���͵�����
+*   [in] len:   Ҫ���͵������ֽ���
+* ����ֵ��  ʵ�ʷ��͵��ֽ���
 */
 int MD_WriteBuf(const unsigned char *pSrc, int len)
 {
@@ -97,12 +97,12 @@ int MD_WriteBuf(const unsigned char *pSrc, int len)
 
 
 /*
-* 函数说明：读取接收缓存
+* ����˵������ȡ���ջ���
 *
-* 参数：
-*   [out]pDes:  指向存储读取数据的缓存区
-*   [in] maxLen:最大读取字节数
-* 返回值：  实际读取字节数
+* ������
+*   [out]pDes:  ָ��洢��ȡ���ݵĻ�����
+*   [in] maxLen:����ȡ�ֽ���
+* ����ֵ��  ʵ�ʶ�ȡ�ֽ���
 */
 int MD_ReadBuf(unsigned char *pDes, int maxLen)
 {

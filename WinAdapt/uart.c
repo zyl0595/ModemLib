@@ -24,12 +24,12 @@ HANDLE uart_open(char *CommName, int rate)
 
 	SetupComm(hCom, 10*1024,10*1024);//set in out buf size
 
-	//è®¾å®šè¯»è¶…æ—¶
+	//Éè¶¨¶Á³¬Ê±
 	TimeOuts.ReadIntervalTimeout=10;
 	TimeOuts.ReadTotalTimeoutMultiplier=10;
 	TimeOuts.ReadTotalTimeoutConstant=10;
 
-	//è®¾å®šå†™è¶…æ—¶
+	//Éè¶¨Ð´³¬Ê±
 	TimeOuts.WriteTotalTimeoutMultiplier=10;
 	TimeOuts.WriteTotalTimeoutConstant=10;
 	SetCommTimeouts(hCom,&TimeOuts); 

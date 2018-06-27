@@ -1,14 +1,14 @@
 /* 
-* æ–‡ä»¶åç§°ï¼šMD.c
-* æ‘˜    è¦ï¼š
+* ÎÄ¼þÃû³Æ£ºMD.c
+* Õª    Òª£º
 *  
-* ä½œ    è€…ï¼š
-* åˆ›å»ºæ—¥æœŸï¼š2018å¹´6æœˆ18æ—¥ 
+* ×÷    Õß£ºÕÅÔÆÁú
+* ´´½¨ÈÕÆÚ£º2018Äê6ÔÂ18ÈÕ 
 *
-* ä¿®æ”¹åŽ†å²
-* ä¿®æ”¹æ‘˜è¦ï¼š
-* ä¿®æ”¹ä½œè€…ï¼š
-* ä¿®æ”¹æ—¶é—´ï¼š
+* ÐÞ¸ÄÀúÊ·
+* ÐÞ¸ÄÕªÒª£º
+* ÐÞ¸Ä×÷Õß£º
+* ÐÞ¸ÄÊ±¼ä£º
 */
 
 #include <string.h>
@@ -17,17 +17,17 @@
 #include "MDPort.h"
 #include "MD_CLM920.h"
 
-/*************************** ç§æœ‰å®šä¹‰ ******************************/
+/*************************** Ë½ÓÐ¶¨Òå ******************************/
 
-/*************************** ç§æœ‰å˜é‡ ******************************/
+/*************************** Ë½ÓÐ±äÁ¿ ******************************/
 
-/*************************** å…¨å±€å˜é‡ ******************************/
-sMDModemInfo g_MdInfo;
+/*************************** È«¾Ö±äÁ¿ ******************************/
+sMDModem g_MdInfo; /*´æ´¢¼ÇÂ¼Ä£¿é×´Ì¬ºÍ×ÊÔ´*/
 
 
-/*************************** å‡½æ•°å®žçŽ° ******************************/
+/*************************** º¯ÊýÊµÏÖ ******************************/
 
-static void MD_SockCBInit(sMDSocketCB *pSock)
+static void MD_SocketInit(sMDSocket *pSock)
 {
     if(NULL != pSock){
         pSock->ip.val = 0; //0.0.0.0
@@ -38,17 +38,20 @@ static void MD_SockCBInit(sMDSocketCB *pSock)
 }
 
 /*
-* è¯†åˆ«æ¨¡å—ç±»åž‹ï¼Œåˆå§‹åŒ–æ¨¡å—è¿žæŽ¥ç½‘ç»œ 
+* Ê¶±ðÄ£¿éÀàÐÍ£¬³õÊ¼»¯Ä£¿éÁ¬½ÓÍøÂç 
 */ 
 int MD_Init(void)
 {
     int i;
+    int ret = 0;
+
+    /*³õÊ¼»¯Ä£¿é¸÷ÀàÐÅÏ¢*/
+    g_MdInfo.state = MDS_BEGIN;
 
     for(i=0;i<MD_MAX_SOCK_NUM;i++){
-        MD_SockCBInit(&g_MdInfo.sockets[i]);
+        MD_SocketInit(&g_MdInfo.sockets[i]);
     }
 
-    int ret = 0;
     if(MD_TtysOpen()){
         if(MDE_OK == CLM920_Init()){
             MD_DEBUG("CLM920 init succ!\r\n");
@@ -64,11 +67,13 @@ int MD_Init(void)
     return ret;
 }
 
-//åŸŸåè§£æž
+//ÓòÃû½âÎö
 eMDErrCode MD_GetHostByName(const char *pName, sMDIPv4Addr *pAddr)
 {
-    eMDErrCode ret;
-    return MDE_OK;
+    //switch(g_MdInfo.mdInfo.type){
+    //    case:
+    //}
+    return CLM920_GetHostByName(pName, pAddr);
 }
 
 

@@ -1,281 +1,275 @@
 /* 
-* æ–‡ä»¶åç§°ï¼šMDATProc.c
-* æ‘˜    è¦ï¼šæä¾›ä¸€äº›é€šç”¨çš„ATæŒ‡ä»¤äº¤äº’å‡½æ•°çš„å®ç°ï¼Œè¿™äº›å‡½æ•°å¯ä»¥è¢«ç”¨æ¥å‘æ¨¡å—å‘é€
-*           ATæŒ‡ä»¤å¹¶æ¥æ”¶æ¨¡å—å“åº”æ•°æ®
+* ÎÄ¼şÃû³Æ£ºMDATProc.c
+* Õª    Òª£ºÌá¹©Ò»Ğ©Í¨ÓÃµÄATÖ¸Áî½»»¥º¯ÊıµÄÊµÏÖ£¬ÕâĞ©º¯Êı¿ÉÒÔ±»ÓÃÀ´ÏòÄ£¿é·¢ËÍ
+*           ATÖ¸Áî²¢½ÓÊÕÄ£¿éÏìÓ¦Êı¾İ
 *  
-* ä½œ    è€…ï¼š
-* åˆ›å»ºæ—¥æœŸï¼š2018å¹´6æœˆ18æ—¥ 
+* ×÷    Õß£ºÕÅÔÆÁú
+* ´´½¨ÈÕÆÚ£º2018Äê6ÔÂ18ÈÕ 
 *
-* ä¿®æ”¹å†å²
-* ä¿®æ”¹æ‘˜è¦ï¼š
-* ä¿®æ”¹ä½œè€…ï¼š
-* ä¿®æ”¹æ—¶é—´ï¼š
+* ĞŞ¸ÄÀúÊ·
+* ĞŞ¸ÄÕªÒª£º
+* ĞŞ¸Ä×÷Õß£º
+* ĞŞ¸ÄÊ±¼ä£º
 */
 
 #include <string.h>
+#include <stdlib.h>
 #include "MDConfig.h"
 #include "MDAtCmd.h"
 #include "MDPort.h"
 #include "MDType.h"
 
-/************************** ç§æœ‰å®šä¹‰ *********************************/
-#define IS_AT_RSP_OK(str) (strstr(str, "OK"))
-#define IS_AT_RSP_ERR(str) (strstr(str, "ERROR"))
+/************************** Ë½ÓĞ¶¨Òå *********************************/
+#define AT_OK			"OK"
+#define AT_ERROR		"ERROR"
+#define AT_RTR          ">"     //Ready To Recive
+#define CRLF			"\r\n"
+#define CR				0x0Du
+#define LF				0x0Au
+
+#define IS_AT_RSP_OK(str) (strstr(str, AT_OK))
+#define IS_AT_RSP_ERR(str) (strstr(str, AT_ERROR))
 
 
-
-/************************** ç§æœ‰å˜é‡  *********************************/
+/************************** Ë½ÓĞ±äÁ¿  *********************************/
 //static uint8_t s_rcvBuf[];
 
-
-/************************** å‡½æ•°å®ç°  *********************************/
+/************************** º¯ÊıÊµÏÖ  *********************************/
 /*
-* å‡½æ•°åŠŸèƒ½ï¼šå‘æ¨¡å—å‘é€ATæŒ‡ä»¤ï¼Œå¹¶ç­‰å¾…æ¥æ”¶æ¨¡å—å“åº”ï¼Œå¹¶å¯¹å“åº”æ•°æ®è¿›è¡Œå¤„ç†
-*           å¯¹æ¨¡å—å“åº”æ•°æ®çš„å¤„ç†æœ‰ä¸‰ç§æ–¹å¼ï¼š
-*           1.åœ¨æœ‰ä¼ å…¥å›è°ƒå‡½æ•°çš„æƒ…å†µä¸‹ï¼Œè°ƒç”¨å›è°ƒå‡½æ•°å¯¹æ¨¡å—å›åº”æ•°æ®è¿›è¡Œè§£æå¤„ç†ï¼› 
-*           2.åœ¨æ²¡æœ‰è®¾ç½®å›è°ƒå‡½æ•°ï¼Œä½†æœ‰ä¼ å…¥åŒ¹é…å­—ç¬¦ä¸²æ—¶ï¼Œåœ¨æ¨¡å—å“åº”æ•°æ®ä¸­åŒ¹é…æŒ‡ 
-*             å®šå­—ç¬¦ä¸²ï¼Œå¹¶æ ¹æ®åŒ¹é…ç»“æœè¿”å›å¯¹åº”å€¼ï¼› 
-*           3.åœ¨æ²¡æœ‰è®¾ç½®å›è°ƒå‡½æ•°å’Œç›®æ ‡åŒ¹é…å­—ç¬¦ä¸²æ—¶ï¼Œå½“åˆ¤æ–­æ¨¡å—æœ‰äº§ç”Ÿå®Œæ•´å›åº”æ—¶ï¼Œ
-*             ä¾¿è¿”å›æˆåŠŸï¼Œå¦åˆ™è¿”å›å¤±è´¥ã€‚
-* å‚æ•°è¯´æ˜ï¼š
-*     [in]pCmd  :   æŒ‡å‘è¦å‘é€çš„ATæŒ‡ä»¤(NULL terminated!)ï¼› 
-*     [in]delay :   ç­‰å¾…æ¨¡å—è¿”å›å®Œæ•´å“åº”çš„æœ€é•¿æ—¶é—´(å•ä½ï¼šs) ï¼› 
-*     [in]pRspHdl:  æ¨¡å—è¿”å›ç»“æœå¤„ç†å›è°ƒå‡½æ•°
-*     [in]pArg  :   å½“(pRspHdl != NULL)æ—¶ä½œä¸ºpRspHdlå‚æ•°ï¼Œå½“(pRspHdl == NULL)æ—¶ï¼Œ
-*                   pArgç”¨ä½œè¿”å›ç»“æœåŒ¹é…ç›®æ ‡å­—ç¬¦ä¸²ï¼Œä¸ºNULLæ—¶é»˜è®¤æ¯”è¾ƒ"OK"æˆ–è€…"ERROR"
+* º¯Êı¹¦ÄÜ£ºµ÷ÓÃµ×²ãÊı¾İ·¢ËÍ½Ó¿Ú·¢ËÍATÃüÁîµ½Ä£¿é
+* ²ÎÊıËµÃ÷£º
+*     [in]pCmd :   Òª·¢ËÍµÄATÃüÁî£¨±ØĞëÊÇ NULL terminated string£©£» 
 *
-* æ³¨æ„ï¼šæœ¬å‡½æ•°ä¸å¯¹è¦å‘é€åˆ°æ¨¡å—çš„ATæŒ‡ä»¤çš„åˆæ³•æ€§è¿›è¡Œæ£€æŸ¥
-* è¿”å›å€¼ï¼šæˆåŠŸã€å¤±è´¥ã€æŒ‡ä»¤å‘é€å®å‘ã€è¶…æ—¶ ã€æ¥æ”¶ç¼“å­˜æº¢å‡º
+* ·µ»ØÖµ£º·¢ËÍ½á¹û£º³É¹¦¡¢Ê§°Ü(´®¿ÚĞ´ÈëÊ§°Ü)
 */ 
-eMDErrCode MD_ATCmdSnd(const uint8_t *pCmd, uint8_t delay, ATCmdRspHdl pRspHdl, void *pArg)
+static eMDErrCode MD_SndATCmd(const uint8_t *pCmd)
 {
-    uint32_t waitCnt = 0;   //ç­‰å¾…æ¨¡å—å“åº”ATæŒ‡ä»¤è®¡æ—¶ 
-    uint16_t cmdLen;        //ATæŒ‡ä»¤é•¿åº¦ 
-    sMDAtCmdRsp rsp;
-    uint16_t rcvIndex = 0;
-    uint16_t rcvLen;
-    uint16_t remainedSpac;  //å‰©ä½™æ¥æ”¶ç¼“å­˜ç©ºé—´
-    uint8_t *pFind;
-    uint8_t *pCurFind = rsp.buf;
-    BOOLEAN isCompaStr;
-    BOOLEAN isStrRcved = FALSE; //æ˜¯å¦æ¥æ”¶åˆ°ç›®æ ‡å­—ç¬¦ä¸² pArg
+    uint32_t cmdLen = strlen(pCmd);
 
-    /*æ˜¯å¦åŒ¹é…ATå‘½ä»¤è¿”å›å­—ç¬¦ä¸²å†…å®¹*/
-    if((NULL == pRspHdl) && (NULL != pArg)){
-        isCompaStr = TRUE;
+    if(cmdLen == MD_WriteBuf(pCmd, cmdLen)){
+        return MDE_OK;
     }else{
-        isCompaStr = FALSE;
-    }
-
-    /*å‘é€ATå‘½ä»¤åˆ°ä¸²å£ä¸Š*/
-    MD_DEBUG("Snd:%s", pCmd);
-    cmdLen = strlen(pCmd);
-    if(cmdLen != MD_WriteBuf(pCmd, cmdLen)){
-        MD_DEBUG("AT cmd snd failed!\r\n");
         return MDE_TTYSERR;
     }
-    
-    /*æ¥æ”¶å›å¤æŒ‡ä»¤*/
+}
+
+
+/*
+* º¯Êı¹¦ÄÜ£º´Ó½ÓÊÕ»º´æÖĞ½ÓÊÕATÖ¸ÁîÏìÓ¦Êı¾İ
+* ²ÎÊıËµÃ÷£º
+*     [out]pRsp  :   Ö¸Ïò´æ´¢ATÏìÓ¦ÄÚÈİµÄ»º´æ
+*     [in] delay :   µÈ´ıÄ£¿é·µ»ØÍêÕûÏìÓ¦µÄ×î³¤Ê±¼ä(µ¥Î»£º10ms)£» 
+*     [in] pStr  :   ÌØÊâÏìÓ¦×Ö·û´®£¬Èç">"£¬NULLÊ±Ä¬ÈÏÆ¥Åä"OK"»ò"ERROR"
+*
+* ·µ»ØÖµ£º»ñÈ¡½á¹û£º³É¹¦¡¢Ê§°Ü(³¬Ê± ¡¢½ÓÊÕ»º´æÒç³ö)
+* ×¢Òâ£ºµ±pStr²»ÎªNULLÊ±£¬Ò»Æ¥Åäµ½pStrº¯Êı±ãÁ¢¼´½áÊø½ÓÊÕ·µ»Ø
+*/ 
+static eMDErrCode MD_GetATRsp(sMDAtCmdRsp *pRsp, uint32_t delay, const uint8_t *pStr)
+{
+    uint32_t waitCnt = 0;   //µÈ´ıÄ£¿éÏìÓ¦ATÖ¸Áî¼ÆÊ±
+    uint16_t rcvIndex = 0;
+    uint16_t rcvLen;        //Ò»´Î¶ÁÈ¡½ÓÊÕ»º´æµÃµ½µÄÊı¾İ³¤¶È
+    uint16_t remainedSpac;  //Ê£Óà½ÓÊÕ»º´æ¿Õ¼ä
+    uint8_t *pFind;
+    uint8_t *pCurFind = pRsp->buf;
+
     do{
-        remainedSpac = sizeof(rsp.buf)-1 - rcvIndex;//è®¡ç®—å‰©ä½™å¯æ¥æ”¶å­—èŠ‚æ•°
-        
+        remainedSpac = MD_RCV_BUF_SIZE-1 - rcvIndex;//»º´æÊ£Óà¿Õ¼ä
         if(remainedSpac > 0){
-            rcvLen = MD_ReadBuf(rsp.buf+rcvIndex, remainedSpac);
+            rcvLen = MD_ReadBuf(pRsp->buf+rcvIndex, remainedSpac);
         }else{
-            MD_DEBUG("AT cmd rcv buf overflow!\r\n");
-            return MDE_BUFOVFL; //æ¥æ”¶ç¼“å­˜å·²æ»¡éƒ½æœªèƒ½åŒ¹é…åˆ°ç›®æ ‡å­—ç¬¦ä¸²
+            return MDE_BUFOVFL;
         }
-        
+
         if(rcvLen > 0){
             rcvIndex += rcvLen;
-            rsp.buf[rcvIndex] = '\0';
+            pRsp->buf[rcvIndex] = '\0';
 
-            /*é€è¡ŒæŸ¥æ‰¾ï¼š"OK"ã€"ERROR"ã€pArg*/
-            pFind = strstr(pCurFind, "\r\n");
-            if(pFind){//æ¥æ”¶åˆ°æ–°è¡Œ
-
-                if(TRUE == isCompaStr){
-                    if((FALSE == isStrRcved) && strstr(pCurFind, pArg)){
-                        isStrRcved = TRUE;
-                        waitCnt = 0;
-                    }
-
-                    if(TRUE == isStrRcved){//åœ¨å·²ç»åŒ¹é…åˆ°ç›®æ ‡å­—ç¬¦ä¸²åå†æ¥æ”¶åˆ°"OK"æˆ–"ERROR"æ—¶åº”è¯¥ç«‹å³ç»“æŸæ¥æ”¶
-                        if(IS_AT_RSP_OK(pCurFind)){
-                            rsp.isPositive = TRUE;
-                            break;
-                        }else if(IS_AT_RSP_ERR(pCurFind)){
-                            rsp.isPositive = FALSE;
-                            break;
-                        }
-                    }
-                }else{
-                    if(IS_AT_RSP_OK(pCurFind)){
-                        rsp.isPositive = TRUE;
-                        break;
-                    }else if(IS_AT_RSP_ERR(pCurFind)){
-                        rsp.isPositive = FALSE;
-                        break;
-                    }
-                }
-
-                pCurFind = pFind + 2;//ä¸‹æ¬¡ä»ä¸‹ä¸€è¡Œå¼€å§‹æ‰¾ä»¥æé«˜é€Ÿåº¦
+            /*²éÕÒÌØÊâ×Ö·û´®*/
+            if((NULL != pStr) && strstr(pCurFind, pStr)){
+                break;
             }
-            
-        }else{
-            if(TRUE == isStrRcved){
-                /*å³ä½¿åŒ¹é…åˆ°ä¹Ÿç»§ç»­æ¥æ”¶ä»¥å®Œæ•´æ¥æ”¶æ•´ä¸ªå“åº”ä¿¡æ¯ï¼ˆç›´åˆ°æ”¶åˆ°"OK"ï¼‰æˆ–è€…è¶…æ—¶*/
-                if((waitCnt >= 10)){ //10*10ms
+
+            /*ÖğĞĞ²éÕÒ£º"OK"¡¢"ERROR"*/
+            pFind = strstr(pCurFind, CRLF);//²éÕÒĞÂĞĞ
+            if(pFind){
+                if(IS_AT_RSP_OK(pCurFind)){
+                    pRsp->isPositive = TRUE;
+                    break;
+                }else if(IS_AT_RSP_ERR(pCurFind)){
+                    pRsp->isPositive = FALSE;
                     break;
                 }
+                pCurFind = pFind + strlen(CRLF);//ÏÂ´Î´ÓÏÂÒ»ĞĞ¿ªÊ¼ÕÒÒÔÌá¸ßËÙ¶È
             }
 
+        }else{
             MD_Delay(10);
             waitCnt++;
         }
-    } while (waitCnt <= (delay*100u));
-    
-    /*è‹¥å“åº”æˆåŠŸï¼Œè°ƒç”¨å›è°ƒå‡½æ•°è¿›è¡Œå¤„ç†æˆ–ç›´æ¥è¿”å›ç»“æœï¼Œå¦åˆ™è¿”å›è¶…æ—¶*/
-    if(waitCnt <= (delay*100u)){
-        rsp.len = rcvIndex;
-        
-        MD_DEBUG("Rsp:%s", rsp.buf);
-        
-        /*å¯ä»¥æœ‰ä¸‰ç§æ–¹å¼å¯¹å›åº”æ•°æ®è¿›è¡Œå¤„ç†*/ 
-        if(NULL != pRspHdl){    //1.æœ‰å›è°ƒå‡½æ•°è°ƒç”¨å›è°ƒå‡½æ•°å¤„ç† 
-            return  pRspHdl(&rsp, pArg);
-        }else if(NULL != pArg){ //2.æ²¡æœ‰å›è°ƒå‡½æ•°ï¼Œä½†æœ‰åŒ¹é…å­—ç¬¦ä¸²ï¼Œè¿”å›å†…å®¹åŒ¹é…ç»“æœ
-            if(strstr(rsp.buf, pArg)){
-                return MDE_OK;
-            }else{
-                return MDE_ERROR;
-            }
-        }else{                  //3.æœ‰å®Œæ•´å›åº”å°±ç›´æ¥è¿”å›ç»“æœ
-            if(TRUE == rsp.isPositive){
-                return MDE_OK;
-            }else{
-                return MDE_ERROR;
-            }
-            
-        }
+    }while(waitCnt <= delay);
+
+    pRsp->len = rcvIndex;
+
+    if(waitCnt <= delay){
+        return MDE_OK;
     }else{
-        MD_DEBUG("AT cmd timeout!\r\n");
         return MDE_TIMEOUT;
     }
 }
 
 
 /*
-* å‡½æ•°åŠŸèƒ½ï¼šæ‰§è¡Œç”¨äºå‘é€æ•°æ®çš„ATæŒ‡ä»¤å¹¶å‘é€æ•°æ®ï¼Œå¦‚å‘é€çŸ­ä¿¡ã€å‘é€TCPæ•°æ®æŠ¥
+* º¯Êı¹¦ÄÜ£ºÏòÄ£¿é·¢ËÍATÖ¸Áî£¬²¢½ÓÊÕÄ£¿éÏìÓ¦
+*
+* ²ÎÊıËµÃ÷£º
+*     [in]pCmd  :   Ö¸ÏòÒª·¢ËÍµÄATÖ¸Áî(NULL terminated!)£» 
+*     [in]delay :   µÈ´ıÄ£¿é·µ»ØÍêÕûÏìÓ¦µÄ×î³¤Ê±¼ä(µ¥Î»£ºs) £» 
+*     [out]pRsp :   ½ÓÊÕÄ£¿éÖ¸Áî·µ»Ø½á¹û
+*
+* ×¢Òâ£º±¾º¯Êı²»¶ÔÒª·¢ËÍµ½Ä£¿éµÄATÖ¸ÁîµÄºÏ·¨ĞÔ½øĞĞ¼ì²é
+* ·µ»ØÖµ£º³É¹¦¡¢Ê§°Ü¡¢Ö¸Áî·¢ËÍÊµ·¢¡¢³¬Ê± ¡¢½ÓÊÕ»º´æÒç³ö
+*/ 
+eMDErrCode MD_ATCmdSnd(const uint8_t *pCmd, uint8_t delay, sMDAtCmdRsp *pRsp)
+{
+    eMDErrCode ret;
+
+    /*·¢ËÍATÃüÁîµ½´®¿ÚÉÏ*/
+    MD_DEBUG("Snd:%s", pCmd);
+    ret = MD_SndATCmd(pCmd);
+    if(MDE_OK != ret){
+        MD_DEBUG("AT cmd snd failed!\r\n");
+        return ret;
+    }
+
+    /*½ÓÊÕÖ¸Áî»Ø¸´*/
+    ret = MD_GetATRsp(pRsp, 100*delay, NULL);
+    if(MDE_OK == ret){
+        MD_DEBUG("Rsp:%s", pRsp->buf);
+    }else{
+        MD_DEBUG("AT cmd rsp failed!\r\n");
+    }
+
+    return ret;
+}
+
+
+/*
+* º¯Êı¹¦ÄÜ£ºÏòÄ£¿é·¢ËÍATÖ¸Áî£¬²¢½ÓÊÕÄ£¿éÏìÓ¦£¬²¢¶ÔÏìÓ¦Êı¾İ½øĞĞ´¦Àí¶ÔÄ£¿éÏìÓ¦Êı
+*           ¾İµÄ´¦ÀíÓĞÈıÖÖ·½Ê½£º
+*           1.ÔÚÓĞ´«Èë»Øµ÷º¯ÊıµÄÇé¿öÏÂ£¬µ÷ÓÃ»Øµ÷º¯Êı¶ÔÄ£¿é»ØÓ¦Êı¾İ½øĞĞ½âÎö´¦Àí£» 
+*           2.ÔÚÃ»ÓĞÉèÖÃ»Øµ÷º¯Êı£¬µ«ÓĞ´«ÈëÆ¥Åä×Ö·û´®Ê±£¬ÔÚÄ£¿éÏìÓ¦Êı¾İÖĞÆ¥ÅäÖ¸ 
+*             ¶¨×Ö·û´®£¬²¢¸ù¾İÆ¥Åä½á¹û·µ»Ø¶ÔÓ¦Öµ£» 
+*           3.ÔÚÃ»ÓĞÉèÖÃ»Øµ÷º¯ÊıºÍÄ¿±êÆ¥Åä×Ö·û´®Ê±£¬µ±ÅĞ¶ÏÄ£¿éÓĞ²úÉúÍêÕû»ØÓ¦Ê±£¬
+*             ±ã·µ»Ø³É¹¦£¬·ñÔò·µ»ØÊ§°Ü¡£
+* ²ÎÊıËµÃ÷£º
+*     [in]pCmd  :   Ö¸ÏòÒª·¢ËÍµÄATÖ¸Áî(NULL terminated!)£» 
+*     [in]delay :   µÈ´ıÄ£¿é·µ»ØÍêÕûÏìÓ¦µÄ×î³¤Ê±¼ä(µ¥Î»£ºs) £» 
+*     [in]pRspHdl:  Ä£¿é·µ»Ø½á¹û´¦Àí»Øµ÷º¯Êı
+*     [in]pArg  :   µ±(pRspHdl != NULL)Ê±×÷ÎªpRspHdl²ÎÊı£¬µ±(pRspHdl == NULL)Ê±£¬
+*                   pArgÓÃ×÷·µ»Ø½á¹ûÆ¥ÅäÄ¿±ê×Ö·û´®£¬ÎªNULLÊ±Ä¬ÈÏ±È½Ï"OK"»òÕß"ERROR"
+*
+* ×¢Òâ£º±¾º¯Êı²»¶ÔÒª·¢ËÍµ½Ä£¿éµÄATÖ¸ÁîµÄºÏ·¨ĞÔ½øĞĞ¼ì²é
+* ·µ»ØÖµ£º³É¹¦¡¢Ê§°Ü¡¢Ö¸Áî·¢ËÍÊµ·¢¡¢³¬Ê± ¡¢½ÓÊÕ»º´æÒç³ö
+*/ 
+eMDErrCode MD_ATCmdSndWithCb(const uint8_t *pCmd, uint8_t delay, ATCmdRspHdl pRspHdl, void *pArg)
+{
+    eMDErrCode ret;
+    sMDAtCmdRsp rsp;
+
+    /*Ö´ĞĞATÃüÁî½»»¥*/
+    ret = MD_ATCmdSnd(pCmd, delay, &rsp);
+    
+    /*ÏìÓ¦Êı¾İ½âÎö´¦Àí*/
+    if(MDE_OK == ret){
+        /*¿ÉÒÔÓĞÈıÖÖ·½Ê½¶Ô»ØÓ¦Êı¾İ½øĞĞ´¦Àí*/ 
+        if(NULL != pRspHdl){    //1.ÓĞ»Øµ÷º¯Êıµ÷ÓÃ»Øµ÷º¯Êı´¦Àí 
+            return  pRspHdl(&rsp, pArg);
+        }else if(NULL != pArg){ //2.Ã»ÓĞ»Øµ÷º¯Êı£¬µ«ÓĞÆ¥Åä×Ö·û´®£¬·µ»ØÄÚÈİÆ¥Åä½á¹û
+            if(strstr(rsp.buf, pArg)){
+                return MDE_OK;
+            }else{
+                return MDE_ERROR;
+            }
+        }else{                  //3.ÓĞÍêÕû»ØÓ¦¾ÍÖ±½Ó·µ»Ø½á¹û
+            if(TRUE == rsp.isPositive){
+                return MDE_OK;
+            }else{
+                return MDE_ERROR;
+            }
+        }
+    }else{
+        return ret;
+    }
+}
+
+
+/*
+* º¯Êı¹¦ÄÜ£ºÖ´ĞĞÓÃÓÚ·¢ËÍÊı¾İµÄATÖ¸Áî²¢·¢ËÍÊı¾İ£¬Èç·¢ËÍ¶ÌĞÅ¡¢·¢ËÍTCPÊı¾İ±¨
 * 
-* å‚æ•°è¯´æ˜ï¼š
-*   [in]pTable: æŒ‡å‘è¦å‘é€çš„ATæŒ‡ä»¤è¡¨ï¼› 
-*   [in]pData : æŒ‡å‘è¦é€šè¿‡è¯¥æ¡æŒ‡ä»¤å‘é€çš„æ•°æ®ï¼›
-*   [in]len :   è¦å‘é€æ•°æ®çš„é•¿åº¦
-*   [in]delay:  ç­‰å¾…æ¨¡å—è¿”å›å®Œæ•´å“åº”çš„æœ€é•¿æ—¶é—´(å•ä½ï¼šs) 
-* è¿”å›å€¼ï¼š  æˆåŠŸã€å¤±è´¥ã€æŒ‡ä»¤å‘é€å®å‘ã€è¶…æ—¶ ã€æ¥æ”¶ç¼“å­˜æº¢å‡º
+* ²ÎÊıËµÃ÷£º
+*   [in]pTable: Ö¸ÏòÒª·¢ËÍµÄATÖ¸Áî±í£» 
+*   [in]pData : Ö¸ÏòÒªÍ¨¹ı¸ÃÌõÖ¸Áî·¢ËÍµÄÊı¾İ£»
+*   [in]len :   Òª·¢ËÍÊı¾İµÄ³¤¶È
+*   [in]delay:  µÈ´ıÄ£¿é·µ»ØÍêÕûÏìÓ¦µÄ×î³¤Ê±¼ä(µ¥Î»£ºs) 
+* ·µ»ØÖµ£º  ³É¹¦¡¢Ê§°Ü¡¢Ö¸Áî·¢ËÍÊµ·¢¡¢³¬Ê± ¡¢½ÓÊÕ»º´æÒç³ö
 */ 
 eMDErrCode MD_ATDataSend(const uint8_t *pCmd, const uint8_t *pData, uint16_t len, uint8_t delay)
 {
-    uint32_t waitCnt = 0;   //ç­‰å¾…æ¨¡å—å“åº”ATæŒ‡ä»¤è®¡æ—¶ 
-    uint16_t cmdLen;        //ATæŒ‡ä»¤é•¿åº¦ 
-    uint16_t rcvIndex = 0;
-    uint16_t rcvLen;
-    uint8_t rcvBuf[MD_RCV_BUF_SIZE];
-    BOOLEAN isEnterRcved = FALSE;
+    eMDErrCode ret;
+    sMDAtCmdRsp rsp;
     
-    /*å‘é€ATå‘½ä»¤åˆ°ä¸²å£ä¸Š*/
+    /*·¢ËÍATÃüÁîµ½´®¿ÚÉÏ*/
     MD_DEBUG("Snd:%s", pCmd);
-    cmdLen = strlen(pCmd);
-    if(cmdLen != MD_WriteBuf(pCmd, cmdLen)){
+    ret = MD_SndATCmd(pCmd);
+    if(MDE_OK != ret){
         MD_DEBUG("AT cmd snd failed!\r\n");
-        return MDE_TTYSERR;
+        return ret;
     }
     
+    /*µÈ´ıÄ£¿éÈ·ÈÏ*/
     MD_DEBUG("Rcving '>'...\r\n");
-    do{
-        rcvLen = MD_ReadBuf(rcvBuf+rcvIndex, sizeof(rcvBuf)-1 - rcvIndex);
-        if(rcvLen > 0){
-            rcvIndex += rcvLen;
-            rcvBuf[rcvIndex] = '\0';    //ç¡®ä¿å…¶ä¸º NULL terminated string
-
-            if(strstr(rcvBuf, ">")){
-                break;              //æŒ‡ä»¤å“åº”æ­£ç¡®ï¼Œå¯ä»¥å¼€å§‹ä¼ è¾“æ•°æ®
-            }else if(IS_AT_RSP_ERR(rcvBuf)){
-                MD_DEBUG("rcv:%s", rcvBuf);
-                return MDE_ERROR;   //å‘é€å¤±è´¥ 
-            }
-
-            if(rcvIndex >= (sizeof(rcvBuf)-1)){
-                MD_DEBUG("AT cmd rcv buf overflow!\r\n");
-                return MDE_BUFOVFL; //æ¥æ”¶ç¼“å­˜æº¢å‡º
-            }
-        }else{
-            MD_Delay(10);
-            waitCnt++;
-        }
-    }while (waitCnt <= (delay*100u));
-    
-    if(waitCnt > (delay*100u)){
-        MD_DEBUG("AT cmd timeout!\r\n");
-        return MDE_TIMEOUT;
-    }else{
-        waitCnt = 0;
-        rcvIndex = 0;
+    ret = MD_GetATRsp(&rsp, 100*delay, AT_RTR);
+    if(MDE_OK != ret){
+        MD_DEBUG("Get '>' faild!\r\n");
+        return ret;
     }
     
-    /*å‘é€æ•°æ®*/
+    /*·¢ËÍÊı¾İ*/
     MD_DEBUG("Snd data len:%d\r\n", len);
     if(len != MD_WriteBuf(pData, len)){
         MD_DEBUG("Snd failed!\r\n");
         return MDE_TTYSERR;
     }
     
-    do{
-        rcvLen = MD_ReadBuf(rcvBuf+rcvIndex, sizeof(rcvBuf)-1 - rcvIndex);
-        if(rcvLen > 0){
-            rcvIndex += rcvLen;
-            rcvBuf[rcvIndex] = '\0';
-            
-            /*æ£€æŸ¥æ˜¯å¦æ¥æ”¶åˆ°å›è½¦æ¢è¡Œç¬¦ï¼Œå¹¶ä¸”æ˜¯å®Œæ•´å“åº”*/
-            if(strstr(rcvBuf, "\r\n")){
-
-                if(IS_AT_RSP_OK(rcvBuf)){
-                    MD_DEBUG("Data snd succ!\r\n");
-                    return MDE_OK;      //å‘é€æˆåŠŸ 
-                }else if(IS_AT_RSP_ERR(rcvBuf)){
-                    MD_DEBUG("Data snd failed!\r\n");
-                    return MDE_ERROR;   //å‘é€å¤±è´¥
-                }
-            }
-
-            if(rcvIndex >= (sizeof(rcvBuf)-1)){
-                MD_DEBUG("AT cmd rcv buf overflow!\r\n");
-                return MDE_BUFOVFL; //æ¥æ”¶ç¼“å­˜æº¢å‡º
-            }
-            
-        }else{
-            MD_Delay(10);
-            waitCnt++;
+    /*µÈ´ıÈ·ÈÏ*/
+    ret = MD_GetATRsp(&rsp, 100*delay, NULL);
+    if(MDE_OK == ret){
+        if(rsp.isPositive){//ÊÕµ½"OK"
+            MD_DEBUG("Data snd succ!\r\n");
+            return MDE_OK;
+        }else{//ÊÕµ½"ERROR"
+            MD_DEBUG("Data snd failed!\r\n");
+            return MDE_ERROR;
         }
-    }while (waitCnt <= (delay*100u));
-    
-    MD_DEBUG("Data rsp timeout!\r\n");
-    return MDE_TIMEOUT;   //å‘é€å¤±è´¥ 
+    }else{
+        MD_DEBUG("Data snd failed! %d\r\n", ret);
+        return ret;
+    }
 }
 
 
 /*
-* å‡½æ•°åŠŸèƒ½ï¼šæŒ‰ç…§é¡ºåºå‘æ¨¡å—å‘é€ATæŒ‡ä»¤è¡¨å†…çš„æ‰€æœ‰æŒ‡ä»¤ï¼Œ è‹¥æœ‰ä¸€æ¡æŒ‡ä»¤å‘é€è¿”å›å¤±è´¥è¶…
-*           æœ€å¤§é‡å‘æ¬¡æ•°ï¼Œåˆ™è¿”å›é”™è¯¯ï¼Œå¦åˆ™è¿”å›æˆåŠŸ 
-* å‚æ•°è¯´æ˜ï¼š
-*     [in]pTable:   æŒ‡å‘è¦å‘é€çš„ATæŒ‡ä»¤è¡¨ï¼› 
-*     [in]size  :   æŒ‡ä»¤è¡¨å†…æŒ‡ä»¤æ¡æ•°ï¼›
-* è¿”å›å€¼ï¼š æˆåŠŸã€å¤±è´¥ã€æŒ‡ä»¤å‘é€å®å‘ã€è¶…æ—¶ ã€æ¥æ”¶ç¼“å­˜æº¢å‡º
+* º¯Êı¹¦ÄÜ£º°´ÕÕË³ĞòÏòÄ£¿é·¢ËÍATÖ¸Áî±íÄÚµÄËùÓĞÖ¸Áî£¬ ÈôÓĞÒ»ÌõÖ¸Áî·¢ËÍ·µ»ØÊ§°Ü³¬
+*           ×î´óÖØ·¢´ÎÊı£¬Ôò·µ»Ø´íÎó£¬·ñÔò·µ»Ø³É¹¦ 
+* ²ÎÊıËµÃ÷£º
+*     [in]pTable:   Ö¸ÏòÒª·¢ËÍµÄATÖ¸Áî±í£» 
+*     [in]size  :   Ö¸Áî±íÄÚÖ¸ÁîÌõÊı£»
+* ·µ»ØÖµ£º ³É¹¦¡¢Ê§°Ü¡¢Ö¸Áî·¢ËÍÊµ·¢¡¢³¬Ê± ¡¢½ÓÊÕ»º´æÒç³ö
 */ 
 eMDErrCode MD_ATCmdTableSnd(const sMDAtCmdItem *pTable, uint8_t size)
 {
-    //uint8_t buf[100];//åŠ¨æ€æŒ‡ä»¤ç¼“å­˜åŒº 
+    //uint8_t buf[100];//¶¯Ì¬Ö¸Áî»º´æÇø 
     eMDErrCode ret;
     uint8_t i;
     uint8_t tryCnt = 0;
@@ -285,13 +279,13 @@ eMDErrCode MD_ATCmdTableSnd(const sMDAtCmdItem *pTable, uint8_t size)
         
         pCmd = pTable[i].pCmd;
         
-        /*è‹¥ä¸ºåŠ¨æ€æŒ‡ä»¤ï¼Œåˆ™ç”ŸæˆåŠ¨æ€æŒ‡ä»¤ï¼ˆå³éœ€è¦æ ¹æ®è¿è¡Œæ—¶å˜é‡å˜æ›´çš„æŒ‡ä»¤ï¼‰*/
-        //if(cmdATCGDCONT == pCmd){//æ ¹æ®å½“å‰è¿è¥å•†ç”ŸæˆPDPä¸Šä¸‹æ–‡å®šä¹‰æŒ‡ä»¤ 
+        /*ÈôÎª¶¯Ì¬Ö¸Áî£¬ÔòÉú³É¶¯Ì¬Ö¸Áî£¨¼´ĞèÒª¸ù¾İÔËĞĞÊ±±äÁ¿±ä¸üµÄÖ¸Áî£©*/
+        //if(cmdATCGDCONT == pCmd){//¸ù¾İµ±Ç°ÔËÓªÉÌÉú³ÉPDPÉÏÏÂÎÄ¶¨ÒåÖ¸Áî 
         //    sprintf(buf, "AT+CGDCONT %s %d\r\n", "123", 15);
         //    pCmd = buf;
         //}
         
-        ret = MD_ATCmdSnd(pCmd,
+        ret = MD_ATCmdSndWithCb(pCmd,
                           pTable[i].delay,
                           pTable[i].rspHdl,
                           pTable[i].pArg);
@@ -305,9 +299,9 @@ eMDErrCode MD_ATCmdTableSnd(const sMDAtCmdItem *pTable, uint8_t size)
             if(tryCnt >= pTable[i].tryTms){
                 MD_DEBUG("AT cmd falied:\r\n----\r\n%s----\r\n", pTable[i].pCmd);
                 return ret;
-                //i++; tryCnt=0; //æµ‹è¯•æ—¶æ‰“å¼€ï¼Œå³ä½¿ä¸€æ¡æŒ‡ä»¤é”™è¯¯ä¹Ÿå¯ä»¥ç»§ç»­ä¸‹ä¸€æ¡
+                //i++; tryCnt=0; //²âÊÔÊ±´ò¿ª£¬¼´Ê¹Ò»ÌõÖ¸Áî´íÎóÒ²¿ÉÒÔ¼ÌĞøÏÂÒ»Ìõ
             }else{
-                MD_Delay(MD_ATCMD_ITV_WHENERR);//ç¨ä½œç­‰å¾…å†è¿›è¡Œé‡å‘
+                MD_Delay(MD_ATCMD_ITV_WHENERR);//ÉÔ×÷µÈ´ıÔÙ½øĞĞÖØ·¢
             }
         }
     }
@@ -317,63 +311,22 @@ eMDErrCode MD_ATCmdTableSnd(const sMDAtCmdItem *pTable, uint8_t size)
 
 
 /*
-* å‡½æ•°åŠŸèƒ½ï¼šæ¥æ”¶æ¨¡å—çš„éè¯·æ±‚ç»“æœå“åº”
-* å‚æ•°è¯´æ˜ï¼š
-*     [out]pRsp:    å­˜æ”¾éè¯·æ±‚ç»“æœå“åº”ï¼› 
-*     [in]delay:    æ¥æ”¶æœ€å¤§ç­‰å¾…æ—¶é—´(s)ï¼›
-* è¿”å›å€¼ï¼š æˆåŠŸã€å¤±è´¥ã€æŒ‡ä»¤å‘é€å®å‘ã€è¶…æ—¶ ã€æ¥æ”¶ç¼“å­˜æº¢å‡º
+* º¯Êı¹¦ÄÜ£º½ÓÊÕÄ£¿éµÄ·ÇÇëÇó½á¹ûÏìÓ¦
+* ²ÎÊıËµÃ÷£º
+*     [out]pRsp:    ´æ·Å·ÇÇëÇó½á¹ûÏìÓ¦£» 
+*     [in]delay:    ½ÓÊÕ×î´óµÈ´ıÊ±¼ä(s)£»
+* ·µ»ØÖµ£º ³É¹¦¡¢Ê§°Ü¡¢Ö¸Áî·¢ËÍÊµ·¢¡¢³¬Ê± ¡¢½ÓÊÕ»º´æÒç³ö
 */ 
 eMDErrCode MD_AtGetURCMsg(const uint8_t *pUrc, sMDAtCmdRsp *pRsp, uint8_t delay)
 {
-    uint32_t waitCnt = 0;
-    uint16_t rcvIndex = 0;
-    uint16_t rcvLen;
-    BOOLEAN isStrRcved = FALSE;
-
-    do 
-    {
-        rcvLen = MD_ReadBuf(pRsp->buf+rcvIndex, sizeof(pRsp->buf)-1 - rcvIndex);
-        if(rcvLen > 0){
-            rcvIndex += rcvLen;
-            pRsp->buf[rcvIndex] = '\0';
-
-            if(FALSE == isStrRcved){
-                if(strstr(pRsp->buf, "\r\n")){
-                    if(strstr(pRsp->buf, pUrc)){
-                        isStrRcved = TRUE;//å­—ç¬¦ä¸²åŒ¹é…æˆåŠŸ
-                    }
-                }
-            }
-
-            if(rcvIndex >= (sizeof(pRsp->buf)-1)){
-                if(isStrRcved){
-                    return MDE_OK;//æ¥æ”¶æˆåŠŸ
-                }else{
-                    return MDE_BUFOVFL; //æ¥æ”¶ç¼“å­˜æº¢å‡º
-                }
-            }
-        }else{
-            if((isStrRcved) && (waitCnt > 10)){
-                pRsp->buf[rcvIndex] = '\0'; 
-                pRsp->isPositive = TRUE;
-                pRsp->len = rcvIndex;
-                return MDE_OK;//æ¥æ”¶æˆåŠŸ
-            }
-
-            MD_Delay(10);
-            waitCnt++;
-        }
-
-    }while(waitCnt <= (delay*100u));
-
-    return MDE_TIMEOUT;   //æ¥æ”¶è¶…æ—¶
+    return MD_GetATRsp(pRsp, 100*delay, pUrc);
 }
 
 
 /*
-* å‡½æ•°åŠŸèƒ½ï¼šæ ¹æ®æŒ‡ä»¤è¿”å›ç»“æœåˆ¤æ–­æ¨¡å—å½“å‰ç½‘ç»œçŠ¶æ€æ˜¯å¦å·²æ³¨å†Œ
-* å‚æ•°è¯´æ˜ï¼š
-*     pRsp: ä¼ å…¥å‚æ•°ï¼Œæ¥æ”¶åˆ°çš„ATæŒ‡ä»¤å“åº”
+* º¯Êı¹¦ÄÜ£º¸ù¾İÖ¸Áî·µ»Ø½á¹ûÅĞ¶ÏÄ£¿éµ±Ç°ÍøÂç×´Ì¬ÊÇ·ñÒÑ×¢²á
+* ²ÎÊıËµÃ÷£º
+*     pRsp: ´«Èë²ÎÊı£¬½ÓÊÕµ½µÄATÖ¸ÁîÏìÓ¦
 */ 
 eMDErrCode MD_ATCGREG_HDL(sMDAtCmdRsp *pRsp, void *pArg)
 {
@@ -386,11 +339,83 @@ eMDErrCode MD_ATCGREG_HDL(sMDAtCmdRsp *pRsp, void *pArg)
         
         if(NULL != pFind){
             pFind++;
-            if('1' == *pFind){//ç¬¬äºŒä¸ªå‚æ•°ä¸º1è¯´æ˜æ³¨å†ŒæˆåŠŸ 
+            if('1' == *pFind){//µÚ¶ş¸ö²ÎÊıÎª1ËµÃ÷×¢²á³É¹¦ 
                 return MDE_OK;
             }
         }
     }
     
     return MDE_ERROR;
+}
+
+
+/*
+* º¯Êı¹¦ÄÜ£º¸ù¾İÖ¸Áî·µ»Ø½á¹ûÅĞ¶ÏÄ£¿éµ±Ç°ÍøÂç¸½×Å×´Ì¬
+* ²ÎÊıËµÃ÷£º
+*     pRsp: ´«Èë²ÎÊı£¬½ÓÊÕµ½µÄATÖ¸ÁîÏìÓ¦
+*/ 
+eMDErrCode MD_ATCGATT_HDL(sMDAtCmdRsp *pRsp, void *pArg)
+{
+    uint8_t *pFind;
+    uint8_t val;
+    sMDModem *pMD = (sMDModem *)pArg;
+
+    pFind =  strstr(pRsp->buf, "+CGATT:");
+    if(NULL != pFind){
+        pFind += strlen("+CGATT:");
+        val = atoi(pFind);
+
+        /*¸üĞÂÏµÍ³ĞÅÏ¢*/
+        if(NULL != pMD){
+            //ÔİÎ´ÊµÏÖ
+        }
+
+        if(1 == val){
+            return MDE_OK;
+        }
+    }
+
+    return MDE_ERROR;
+}
+
+/*
+* º¯Êı¹¦ÄÜ£º¸ù¾İÖ¸Áî·µ»Ø½á¹û»ñÈ¡µ±Ç°ĞÅºÅÖÊÁ¿
+* ²ÎÊıËµÃ÷£º
+*     pRsp: ´«Èë²ÎÊı£¬½ÓÊÕµ½µÄATÖ¸ÁîÏìÓ¦
+*/ 
+eMDErrCode MD_ATCSQ_HDL(sMDAtCmdRsp *pRsp, void *pArg)
+{
+    uint8_t *pFind;
+    uint8_t rssi, ber;
+    sMDModem *pMD = (sMDModem *)pArg;
+    
+    /*»ñÈ¡½ÓÊÕĞÅºÅÇ¿¶ÈÖ¸Ê¾Öµ(received signal strength indication)*/
+    pFind =  strstr(pRsp->buf, "+CSQ:");
+    if(NULL != pFind){
+        pFind += strlen("+CSQ:");
+        rssi = atoi(pFind);
+    }else{
+        MD_DEBUG("CSQ rsp error!\r\n");
+        return MDE_ERROR;
+    }
+
+    /*»ñÈ¡Í¨µÀÎóÂëÂÊ(channel bit error rate)*/
+    pFind = strstr(pFind, ",");
+    if(NULL != pFind){
+        pFind += 1;
+        ber = atoi(pFind);
+    }else{
+        MD_DEBUG("CSQ rsp parse failed!\r\n");
+        return MDE_ERROR;
+    }
+
+    /*¸üĞÂÏµÍ³ĞÅÏ¢*/
+    if(NULL != pMD){
+        pMD->mdInfo.csq.rssi = rssi;
+        pMD->mdInfo.csq.ber = ber;
+    }
+    
+    MD_DEBUG("CSQ update:%d,%d\r\n", rssi, ber);
+
+    return MDE_OK;
 }
