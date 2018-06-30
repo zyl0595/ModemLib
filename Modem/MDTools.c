@@ -57,3 +57,33 @@ eMDErrCode MD_Str2Ip(sMDIPv4Addr *pIp, const uint8_t *pSrc)
 
     return MDE_OK;
 }
+
+
+/*
+* 函数功能：解析字符串时获得跳过某些字符或者字符串后的字符串地址，可以
+*           用在AT指令返回数据解析中
+* 参数说明：
+*     [in] pSrc  :   指向存储AT响应内容的缓存
+*     [in] pStr  :   指向要跳过的特殊字符(",")或字符串("**"),注意不能是(',')； 
+*     [in] n     :   跳过的次数
+*
+* 返回值：返回指向跳过目标字符串后的字符串首地址指针
+*/ 
+uint8_t *MD_SkipStr(uint8_t *pSrc, const uint8_t *pStr, uint8_t n)
+{
+    /*
+    功能举例：
+        pFind = MD_SkipStr("123*abc*456", "*", 2);
+        printf("%s", pFind); //打印出: 456
+    */
+    uint8_t i;
+    uint8_t *pFind = pSrc;
+    uint16_t len = strlen(pStr);
+
+    for(i=0;i<n;i++){
+        pFind = strstr(pFind, pStr);
+        if(NULL == pFind)return NULL;
+        pFind += len;
+    }
+    return pFind;
+}

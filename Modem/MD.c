@@ -27,7 +27,7 @@ sMDModem g_MdInfo; /*存储记录模块状态和资源*/
 
 /*************************** 函数实现 ******************************/
 
-static void MD_SocketInit(sMDSocket *pSock)
+static void MD_SocketInit(sMDSocketHdl *pSock)
 {
     if(NULL != pSock){
         pSock->ip.val = 0; //0.0.0.0

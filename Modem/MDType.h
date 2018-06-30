@@ -97,10 +97,17 @@ typedef union{
 /*Socket Control Block 控制块*/
 typedef struct{
     eMDSockType type;   /*Socket类型*/
-    eMDSockState state; /*Socket连接状态(用作建立连接时这个字段不用理会)*/
     sMDIPv4Addr ip;     /*对端IP地址*/
     uint16_t    port;   /*对端端口号*/
 }sMDSocket;
+
+/*Socket Control Block 控制块*/
+typedef struct{
+    eMDSockType type;   /*Socket类型*/
+    eMDSockState state; /*Socket连接状态(用作建立连接时这个字段不用理会)*/
+    sMDIPv4Addr ip;     /*对端IP地址*/
+    uint16_t    port;   /*对端端口号*/
+}sMDSocketHdl;
 
 /*模块状态*/
 typedef enum{
@@ -117,24 +124,96 @@ typedef struct{
     uint8_t ber;    /*通道误码率*/
 }sMDCSQ;
 
+/*网络制式*/
+typedef enum{
+    NET_AUTO = 0,
+    NET_CDMA,
+    NET_HDR,
+    NET_GSM,
+    NET_WCDMA,
+    NET_TD_SCDMA,
+    NET_EVDO,
+
+}eMDNetMode;
+
 
 /*存储模块各类状态信息*/
 typedef struct{
-    uint16_t type;      /*模块型号*/
-    sMDCSQ   csq;       /*信号质量*/
-    uint8_t IMEI[20];
-    uint8_t IMSI[20];
+    uint16_t    type;      /*模块型号*/
+    sMDCSQ      csq;       /*信号质量*/
+    uint8_t     IMEI[20];
+    uint8_t     IMSI[20];
 
 }sMDModemInfo;
 
 
 typedef struct{
-    eMDStates   state;
-    sMDModemInfo mdInfo;                    /*模块信息：类型、厂家信息、信号质量、网络状态、IMEI、IMSI*/
-    sMDIPv4Addr localAddr;                  /*建立网络连接之后获得的本机IP地址*/
-    sMDSocket   sockets[MD_MAX_SOCK_NUM];   /*Socket列表*/
-    uint8_t     maxSockNum;                 /*根据模块不同支持的最大Socket链接数不同*/
+    eMDStates       state;
+    sMDModemInfo    mdInfo;                     /*模块信息：类型、厂家信息、信号质量、网络状态、IMEI、IMSI*/
+    sMDIPv4Addr     localAddr;                  /*建立网络连接之后获得的本机IP地址*/
+    sMDSocketHdl    sockets[MD_MAX_SOCK_NUM];   /*Socket列表*/
+    uint8_t         maxSockNum;                 /*根据模块不同支持的最大Socket链接数不同*/
 }sMDModem;
+
+
+
+
+/*模块操作函数接口定义*/
+typedef eMDErrCode (*DMF_GetModelInfo)(sMDModem *pMd);                                              /*获取模块型号及各类信息*/
+typedef eMDErrCode (*DMF_GetIMEI)(sMDModem *pMd);                                                   /*获取模块IMEI号*/
+typedef eMDErrCode (*DMF_CheckSIM)(sMDModem *pMd);                                                  /*检查SIM卡状态*/
+typedef eMDErrCode (*DMF_GetIMSI)(sMDModem *pMd);                                                   /*获取SIM卡IMSI号、运营商识别*/
+typedef eMDErrCode (*DMF_GetCSQ)(sMDModem *pMd);                                                    /*获取当前网络信号质量信息*/
+
+typedef eMDErrCode (*DMF_SelectNet)(sMDModem *pMd, eMDNetMode m);                                   /*选择网络制式*/
+typedef eMDErrCode (*DMF_RegToNet)(sMDModem *pMd);                                                  /*注册到网络*/
+typedef eMDErrCode (*DMF_CheckNetState)(sMDModem *pMd);                                             /*检查网络注册状态*/
+
+typedef eMDErrCode (*DMF_DefPDPContext)(sMDModem *pMd);                                             /*定义PDP上下文*/
+typedef eMDErrCode (*DMF_ActPDPContext)(sMDModem *pMd);                                             /*激活PDP上下文*/
+typedef eMDErrCode (*DMF_SetUsrPwd)(sMDModem *pMd);                                                 /*设置用户名和密码*/
+typedef eMDErrCode (*DMF_ChekNetAttch)(sMDModem *pMd);                                              /*检查GPRS网络附着状态*/
+
+typedef eMDErrCode (*DMF_SocketInit)(sMDModem *pMd);                                                /*设置参数、初始化模块到可以开始建立Socket链接的状态*/
+typedef eMDErrCode (*DMF_GetLocalAddr)(sMDModem *pMd);                                              /*获取本机IP地址*/
+typedef eMDErrCode (*DMF_SockConnect)(sMDModem *pMd, uint8_t s, sMDSocket *pS);                     /*建立一个Socket链接*/
+typedef eMDErrCode (*DMF_SockClose)(sMDModem *pMd, uint8_t s);                                      /*关闭一个Socket链接*/
+typedef eMDErrCode (*DMF_SockGetState)(sMDModem *pMd, uint8_t s, eMDSockState *pS);                 /*获取一个Socket链接的状态*/
+typedef eMDErrCode (*DMF_SockSend)(sMDModem *pMd, uint8_t s, const uint8_t *pData, uint16_t len);   /*通过一个Socket链接发送数据*/
+typedef eMDErrCode (*DMF_GetHostByName)(sMDModem *pMd, const uint8_t *pName, sMDIPv4Addr *pIp);     /*通过模块DNS服务获取解析域名获取IP地址*/
+
+/*模块操作函数列表（每个模块都有一个自己列表，模块维护函数通过调用该列表中的函数完成所有对模块的操作）
+当这个列表中的函数指针为NULL时，默认使用对应的通用函数对模块进行操作*/
+typedef struct{
+    /*模块及SIM卡状态获取*/
+    DMF_GetModelInfo    GetModelInfo;
+    DMF_GetIMEI         GetIMEI;
+    DMF_CheckSIM        CheckSIM;
+    DMF_GetIMSI         GetIMSI;
+    DMF_GetCSQ          GetCSQ;
+
+    /*选择网络并注册*/
+    DMF_SelectNet       SelectNet;
+    DMF_RegToNet        RegToNet;
+    DMF_CheckNetState   CheckNetState;
+
+    /*GPRS网络操作*/
+    DMF_DefPDPContext   DefPDPContext;
+    DMF_ActPDPContext   ActPDPContext;
+    DMF_SetUsrPwd       SetUsrPwd;
+    DMF_ChekNetAttch    ChekNetAttch;
+
+    /*内嵌TCP/IP协议栈操作*/
+    DMF_SocketInit      SocketInit;
+    DMF_GetLocalAddr    GetLocalAddr;
+    DMF_SockConnect     SockConnect;
+    DMF_SockClose       SockClose;
+    DMF_SockSend        SockSend;
+    DMF_GetHostByName   GetHostByName;
+}sMDFucTable;
+
+
+
 
 #endif //__MD_TYPE_H
 

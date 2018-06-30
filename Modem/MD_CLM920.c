@@ -16,14 +16,82 @@
 #include <string.h>
 #include "MDTools.h"
 
-/***************** 私有AT指令 ********************/
+
+/********************************* 私有变量 ************************************/
 static uint8_t s_cmdATIPNETOPEN[] = "AT+IPNETOPEN\r\n"; /*驱动内嵌TCPIP协议栈打开Socket网络链接，获取IP地址*/
 static uint8_t s_cmdATIPADDR[] = "AT+IPADDR\r\n";       /*获取当前IP地址*/
 
-/***************** 引入的外部全局变量 ********************/
+/**************************** 引入的外部全局变量 *******************************/
 extern sMDModem g_MdInfo;
 
 
+/********************************* 函数声明 ************************************/
+eMDErrCode CLM920_ATI_Hdl(sMDAtCmdRsp *pRsp, void *pArg);
+eMDErrCode CLM920_ATIPNETOPEN_Hdl(sMDAtCmdRsp *pRsp, void *pArg);
+eMDErrCode CLM920_ATIPADDR_Hdl(sMDAtCmdRsp *pRsp, void *pArg);
+
+
+
+
+
+//const sMDFucTable CLM920_FucTable = {
+//    /*模块及SIM卡状态获取*/
+//    .GetModelInfo = NULL,
+//    .GetIMEI = NULL,
+//    .CheckSIM = NULL,
+//    .GetIMSI = NULL,
+//    .GetCSQ = NULL,
+//
+//    /*选择网络并注册*/
+//    .SelectNet = NULL,
+//    .RegToNet = NULL,
+//    .CheckNetState = NULL,
+//
+//    /*GPRS网络操作*/
+//    .DefPDPContext = NULL,
+//    .ActPDPContext = NULL,
+//    .SetUsrPwd = NULL,
+//    .ChekNetAttch = NULL,
+//
+//    /*内嵌TCP/IP协议栈操作*/
+//    .SocketInit = NULL,
+//    .GetLocalAddr = NULL,
+//    .SockConnect = NULL,
+//    .SockClose = NULL,
+//    .SockSend = NULL,
+//    .GetHostByName = NULL,
+//};
+
+const sMDFucTable CLM920_FucTable = {
+    /*模块及SIM卡状态获取*/
+        //GetModelInfo;
+        //GetIMEI;
+        //CheckSIM;
+        //GetIMSI;
+        //GetCSQ;
+
+    /*选择网络并注册*/
+        //SelectNet;
+        //RegToNet;
+        //CheckNetState;
+
+    /*GPRS网络操作*/
+        //DefPDPContext;
+        //ActPDPContext;
+        //SetUsrPwd;
+        //ChekNetAttch;
+
+    /*内嵌TCP/IP协议栈操作*/
+        //SocketInit;
+        //GetLocalAddr;
+        //SockConnect;
+        //SockClose;
+        //SockSend;
+        //GetHostByName;
+};
+
+
+/********************************* 函数实现 ************************************/
 eMDErrCode CLM920_ATI_Hdl(sMDAtCmdRsp *pRsp, void *pArg)
 {
     if(pRsp->isPositive){

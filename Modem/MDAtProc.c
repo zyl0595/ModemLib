@@ -59,12 +59,12 @@ static eMDErrCode MD_SndATCmd(const uint8_t *pCmd)
 * 参数说明：
 *     [out]pRsp  :   指向存储AT响应内容的缓存
 *     [in] delay :   等待模块返回完整响应的最长时间(单位：10ms)； 
-*     [in] pStr  :   特殊响应字符串，如">"，NULL时默认匹配"OK"或"ERROR"
+*     [in] pTail :   特殊响应结尾字符串，如">"，NULL时默认匹配"OK"或"ERROR"
 *
 * 返回值：获取结果：成功、失败(超时 、接收缓存溢出)
 * 注意：当pStr不为NULL时，一匹配到pStr函数便立即结束接收返回
 */ 
-static eMDErrCode MD_GetATRsp(sMDAtCmdRsp *pRsp, uint32_t delay, const uint8_t *pStr)
+static eMDErrCode MD_GetATRsp(sMDAtCmdRsp *pRsp, uint32_t delay, const uint8_t *pTail)
 {
     uint32_t waitCnt = 0;   //等待模块响应AT指令计时
     uint16_t rcvIndex = 0;
@@ -86,7 +86,7 @@ static eMDErrCode MD_GetATRsp(sMDAtCmdRsp *pRsp, uint32_t delay, const uint8_t *
             pRsp->buf[rcvIndex] = '\0';
 
             /*查找特殊字符串*/
-            if((NULL != pStr) && strstr(pCurFind, pStr)){
+            if((NULL != pTail) && strstr(pCurFind, pTail)){
                 break;
             }
 
