@@ -15,8 +15,9 @@
 #include <Windows.h>
 #include <stdio.h>
 #include "uart.h"
-#include "Fifo.h"
-
+#include "fifo.h"
+#include "ucos_ii.h"
+#include "MDType.h"
 
 /*************************** 私有定义 ******************************/
 #define MD_COM_BAUD_RATE 115200 /*与模块通信串口波特率*/
@@ -28,6 +29,19 @@ static const unsigned char s_Port[] = "COM4";
 
 static unsigned char s_fifoBuf[MD_COM_FIFO_SIZE];
 static FIFO_BUF s_fifo;
+OS_EVENT *pFifoLock = NULL;
+
+sMDMsg s_UartRcvMsg = {
+    MSG_UART_RCV,
+    NULL,
+};
+
+/*************************** 外部变量 ******************************/
+extern OS_EVENT *g_MsgQ;
+extern uint8_t g_AtIsIdle;
+
+/*************************** 函数声明 ******************************/
+void MD_UartReadTask(void *arg);/*串口数据接收进程，模拟真实使用时的串口接收中断*/
 
 /*************************** 函数实现 ******************************/
 /*
@@ -51,7 +65,8 @@ int MD_TtysOpen(void)
 
 int MD_ReadByte(unsigned char* pCh)
 {
-    return uart_read(s_handle, pCh, 1);
+    //return uart_read(s_handle, pCh, 1);
+    return FifoReadByte(&s_fifo, pCh);
 }
 
 
@@ -75,8 +90,22 @@ int MD_LowLayInit(void)
 
     /*初始化接收缓存*/
     FifoBufInit(&s_fifo, s_fifoBuf, sizeof(s_fifoBuf));//Windows 平台本身串口接收就实现了一个FIFO
+    pFifoLock = OSSemCreate(1);
+    if(NULL == pFifoLock){
+        printf("Uart rcv fifo lock create failed!\r\n");
+        return 0;
+    }
 
     /*创建数据接收线程*/
+    OSTaskCreateExt(MD_UartReadTask,
+        NULL,
+        NULL,
+        0,
+        2,
+        NULL,
+        1024,
+        NULL,
+        OS_TASK_OPT_STK_CHK);
 
     return 1;
 }
@@ -106,6 +135,54 @@ int MD_WriteBuf(const unsigned char *pSrc, int len)
 */
 int MD_ReadBuf(unsigned char *pDes, int maxLen)
 {
-    return uart_read(s_handle, pDes, maxLen);
-    //return FifoBufRead(&s_fifo, pDes, maxLen);
+    //return uart_read(s_handle, pDes, maxLen);
+    return FifoReadMultByte(&s_fifo, pDes, maxLen);
+}
+
+
+void MD_UartReadTask(void *arg)
+{
+    unsigned char ch;
+    int ret;
+    int waitCnt = 0;
+    int isReading = 0;
+    unsigned int readCnt = 0;
+    INT8U err;
+
+    do{
+        ret = uart_read(s_handle, &ch, 1);
+        if(ret){
+            waitCnt = 0;
+            isReading = 1;
+            readCnt ++;
+            //OSSemPend(pFifoLock, 0, )//--------------------------------------------------------------尚未完成！！！
+            ret = FifoWriteByte(&s_fifo, ch);
+            if(!ret)printf("Uart rcv fifo write err!\r\n");
+        }else{
+            
+            if(isReading){
+                Sleep(1);
+                waitCnt++;
+                if(waitCnt > 10){
+                    waitCnt = 0;
+                    isReading = 0;
+                    /*帧接收完毕，发送信号告知MD处理新数据*/
+                    //printf("New data Rcved! len:%d\r\n", readCnt);
+                    if(TRUE == g_AtIsIdle){//收到URC
+                        //printf("post urc msg...\r\n"); //---------------------------------------这边暂时不去优化
+                        err = OSQPost(g_MsgQ, &s_UartRcvMsg);
+                        readCnt = 0;
+                        if(1 != err){
+                            printf("Uart rcv msg post err! %d\r\n", err);
+                        }
+                    }
+                }
+            }else{
+                Sleep(10);
+            }
+        }
+    }while(1);
+
+    //不能执行到这
+    printf("\r\n!!!Uart read task return!!!\r\n");
 }

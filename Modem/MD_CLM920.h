@@ -16,10 +16,8 @@
 
 #include "MDType.h"
 
-eMDErrCode CLM920_Init(void);
-eMDErrCode CLM920_SokctInit(sMDModem *pMdInfo);
-eMDErrCode CLM920_SendIpData(uint8_t fd, const sMDSockData *pData);
-eMDErrCode CLM920_GetHostByName(const char *pName, sMDIPv4Addr *pAddr);
+extern const sMDFucTable CLM920_FunTable;
+extern const sMDURCHdlItem s_CLM920UrcHdlTable[];
 
 #endif //__MD_CLM920_H
 

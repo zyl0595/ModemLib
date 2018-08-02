@@ -18,11 +18,12 @@
 extern "C" { 
 #endif
 
-int MD_Init(void);
-void MD_test(void);
-
+int MD_Init(unsigned char *pBuf, unsigned int bufSize);
+int MD_connect(void);
+int MD_SendDataB(unsigned char fd, unsigned char *pBuf, int len);
 
 #ifdef __cplusplus 
-    }
+}
 #endif
-#endif
+
+#endif //__MD_H

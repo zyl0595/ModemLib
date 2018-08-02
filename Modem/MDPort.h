@@ -67,6 +67,7 @@ int MD_WriteBuf(const unsigned char *pSrc, int len);
 */
 int MD_ReadBuf(unsigned char *pDes, int maxLen);
 
+
 #ifdef __cplusplus 
 	}
 #endif

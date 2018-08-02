@@ -167,6 +167,7 @@ void *OSQPend(OS_EVENT *pevent, INT16U timeout, INT8U *err){
 
 	if(info==NULL || info->start == NULL)
 	{
+        
 		if(err)
 			*err = 0;
 
@@ -177,7 +178,7 @@ void *OSQPend(OS_EVENT *pevent, INT16U timeout, INT8U *err){
 
 	OSSemPend(info->lock, 0, NULL);
 
-	if(retErr && info->rd!=info->wd)
+	if((0 == retErr) && (info->rd!=info->wd))
 	{
 		iRet = (int)info->start[info->rd];
 
@@ -186,7 +187,7 @@ void *OSQPend(OS_EVENT *pevent, INT16U timeout, INT8U *err){
 		else
 			info->rd++;
 
-		//log("get:%d %d\r\n", event, iRet);
+		//log("get:%d %d\r\n", (int)pevent, iRet);
 	}
 
 	OSSemPost(info->lock);
